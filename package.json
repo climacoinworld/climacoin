@@ -1,0 +1,26 @@
+{
+  "name": "climacoin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ctindogaru/climacoin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ctindogaru/climacoin/issues"
+  },
+  "homepage": "https://github.com/ctindogaru/climacoin#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@openzeppelin/hardhat-upgrades": "^1.10.0",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.6.6"
+  }
+}
