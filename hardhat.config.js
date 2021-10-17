@@ -13,6 +13,10 @@ module.exports = {
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemyApiKey}`,
       accounts: {mnemonic: mnemonic}
+    },
+    bsctestnet: {
+      url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
+      accounts: {mnemonic: mnemonic}
     }
   }
 };
