@@ -1,8 +1,8 @@
 // hardhat.config.js
-const { alchemyApiKey, mnemonic } = require('./secrets.json');
+const { alchemyApiKey, mnemonic } = require("./secrets.json");
 
 require("@nomiclabs/hardhat-ethers");
-require('@openzeppelin/hardhat-upgrades');
+require("@openzeppelin/hardhat-upgrades");
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -12,11 +12,11 @@ module.exports = {
   networks: {
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemyApiKey}`,
-      accounts: {mnemonic: mnemonic}
+      accounts: { mnemonic: mnemonic },
     },
     bsctestnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
-      accounts: {mnemonic: mnemonic}
-    }
-  }
+      accounts: { mnemonic: mnemonic },
+    },
+  },
 };

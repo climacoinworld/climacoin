@@ -1,4 +1,4 @@
-// test/ClimaCoinToken.proxy.js
+// test/ClimaCoinToken.js
 // Load dependencies
 const { expect } = require("chai");
 
