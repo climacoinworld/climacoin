@@ -4,6 +4,7 @@ const { expect } = require("chai");
 
 let ClimaCoinToken;
 let climaCoinToken;
+let tokenOwner;
 
 // Start test block
 describe("ClimaCoinToken (proxy)", function () {
@@ -14,6 +15,7 @@ describe("ClimaCoinToken (proxy)", function () {
       ["ClimaCoin Token", "CLC", 29000000000],
       { initializer: "initialize" }
     );
+    [tokenOwner, _] = await ethers.getSigners();
   });
 
   // Test case
@@ -23,5 +25,8 @@ describe("ClimaCoinToken (proxy)", function () {
     expect((await climaCoinToken.totalSupply()).toString()).to.equal(
       "29000000000"
     );
+    expect(
+      (await climaCoinToken.balanceOf(tokenOwner.address)).toString()
+    ).to.equal("29000000000");
   });
 });
