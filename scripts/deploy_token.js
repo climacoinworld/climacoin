@@ -4,7 +4,7 @@ async function main() {
   console.log("Deploying ClimaCoinToken...");
   const climaCoinToken = await upgrades.deployProxy(
     ClimaCoinToken,
-    ["ClimaCoin Token", "CLC", 29000000000 * 10 ** 18],
+    ["ClimaCoin Token", "CLC", 29000000000],
     { initializer: "initialize" }
   );
   console.log("ClimaCoinToken deployed to:", climaCoinToken.address);
