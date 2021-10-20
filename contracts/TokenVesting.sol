@@ -7,6 +7,11 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Math/SafeMathUpgradeable.sol";
 
+/**
+ * @title TokenVesting
+ * @dev A token holder contract that can release its token balance gradually like a
+ * typical vesting scheme.
+ */
 contract TokenVesting is Initializable {
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -128,7 +133,7 @@ contract TokenVesting is Initializable {
     }
 
     /**
-     * @return total amount of releases.
+     * @return the number of token releases.
      */
     function releasesCount() public view returns (uint256) {
         return _releasesCount;
