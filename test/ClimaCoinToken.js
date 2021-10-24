@@ -2,14 +2,13 @@
 // Load dependencies
 const { expect } = require("chai");
 
-let ClimaCoinToken;
+// Start test block
+describe("ClimaCoinToken (proxy)", function () {
 let climaCoinToken;
 let tokenOwner;
 
-// Start test block
-describe("ClimaCoinToken (proxy)", function () {
   beforeEach(async function () {
-    ClimaCoinToken = await ethers.getContractFactory("ClimaCoinToken");
+    let ClimaCoinToken = await ethers.getContractFactory("ClimaCoinToken");
     climaCoinToken = await upgrades.deployProxy(
       ClimaCoinToken,
       ["ClimaCoin Token", "CLC", 29000000000],
