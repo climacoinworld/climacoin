@@ -4,8 +4,8 @@ const { expect } = require("chai");
 
 // Start test block
 describe("ClimaCoinToken (proxy)", function () {
-let climaCoinToken;
-let tokenOwner;
+  let climaCoinToken;
+  let tokenOwner;
 
   beforeEach(async function () {
     let ClimaCoinToken = await ethers.getContractFactory("ClimaCoinToken");
