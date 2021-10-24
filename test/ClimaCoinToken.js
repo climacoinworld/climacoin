@@ -23,10 +23,10 @@ describe("ClimaCoinToken (proxy)", function () {
     expect(await climaCoinToken.name()).to.equal("ClimaCoin Token");
     expect(await climaCoinToken.symbol()).to.equal("CLC");
     expect((await climaCoinToken.totalSupply()).toString()).to.equal(
-      "29000000000"
+      "29000000000000000000000000000"
     );
     expect(
       (await climaCoinToken.balanceOf(tokenOwner.address)).toString()
-    ).to.equal("29000000000");
+    ).to.equal("29000000000000000000000000000");
   });
 });

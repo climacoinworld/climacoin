@@ -12,6 +12,6 @@ contract ClimaCoinToken is Initializable, ERC20Upgradeable {
         uint256 initialSupply
     ) public virtual initializer {
         __ERC20_init(name, symbol);
-        _mint(_msgSender(), initialSupply);
+        _mint(_msgSender(), initialSupply * 10**18);
     }
 }

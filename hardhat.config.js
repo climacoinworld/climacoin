@@ -2,6 +2,7 @@
 const { alchemyApiKey, mnemonic } = require("./secrets.json");
 
 require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-web3");
 require("@openzeppelin/hardhat-upgrades");
 
 /**
