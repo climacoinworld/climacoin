@@ -81,7 +81,7 @@ contract TokenVesting is Initializable {
         _duration = duration;
         _releasesCount = releasesCount;
         _start = start;
-        _finish = _start.add(_releasesCount.mul(_duration));
+        _finish = start.add(_releasesCount.mul(_duration));
 
         _revoker = revoker;
     }
@@ -165,6 +165,8 @@ contract TokenVesting is Initializable {
      * @notice Transfers vested tokens to beneficiary.
      */
     function release() public {
+        require(msg.sender == _beneficiary, "release: unauthorized sender!");
+
         uint256 unreleased = _releasableAmount();
         require(unreleased > 0, "release: No tokens are due!");
 
