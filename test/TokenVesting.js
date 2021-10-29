@@ -1,7 +1,7 @@
 // test/TokenVesting.js
 // Load dependencies
 const { expect } = require("chai");
-const { expectRevert, time } = require("@openzeppelin/test-helpers");
+const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 
 // Start test block
 describe("TokenVesting (proxy)", function () {
@@ -18,16 +18,19 @@ describe("TokenVesting (proxy)", function () {
     );
 
     let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
-    let startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
+    this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
+    this.releasesCount = 4;
+    this.duration = time.duration.weeks("10");
+    this.revocable = true;
     this.tokenVesting = await upgrades.deployProxy(
       TokenVestingFactory,
       [
         this.token.address,
         beneficiary.address,
-        startTime.toString(),
-        time.duration.weeks("10").toString(), // Releases delay
-        "4",
-        true,
+        this.startTime.toString(),
+        this.duration.toString(),
+        this.releasesCount.toString(),
+        this.revocable,
         revoker.address,
       ],
       { initializer: "initialize" }
@@ -37,6 +40,44 @@ describe("TokenVesting (proxy)", function () {
       this.tokenVesting.address,
       ethers.utils.parseEther("100")
     );
+  });
+
+  // Test case
+  it("test getters", async function () {
+    let vestingBeneficiary = await this.tokenVesting.beneficiary();
+    expect(vestingBeneficiary).to.equal(beneficiary.address);
+    let vestingStart = await this.tokenVesting.start();
+    expect(vestingStart.toString()).to.equal(this.startTime.toString());
+
+    let vestingFinish = await this.tokenVesting.finish();
+    expect(vestingFinish.toString()).to.equal(
+      this.startTime
+        .add(this.duration.mul(new BN(this.releasesCount)))
+        .toString()
+    );
+
+    let vestingDuration = await this.tokenVesting.duration();
+    expect(vestingDuration.toString()).to.equal(this.duration.toString());
+
+    let vestingRevocable = await this.tokenVesting.revocable();
+    expect(vestingRevocable).to.equal(this.revocable);
+
+    let vestingReleased = await this.tokenVesting.released();
+    expect(vestingReleased.toString()).to.equal("0");
+
+    let vestingReleasesCount = await this.tokenVesting.releasesCount();
+    expect(vestingReleasesCount.toString()).to.equal(
+      this.releasesCount.toString()
+    );
+
+    let vestingRevoked = await this.tokenVesting.revoked();
+    expect(vestingRevoked).to.equal(false);
+
+    let vestingRevoker = await this.tokenVesting.revoker();
+    expect(vestingRevoker).to.equal(revoker.address);
+
+    let vestingAvailableTokens = await this.tokenVesting.getAvailableTokens();
+    expect(vestingAvailableTokens.toString()).to.equal("0");
   });
 
   // Test case
