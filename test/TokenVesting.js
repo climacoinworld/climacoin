@@ -200,7 +200,69 @@ describe("TokenVesting (proxy)", function () {
   });
 
   // Test case
-  it("test revoke", async function () {});
+  it("test revoke", async function () {
+    await expectRevert(
+      this.tokenVesting.connect(beneficiary).revoke(),
+      "revoke: unauthorized sender!"
+    );
+
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await time.increase(parseInt(time.duration.minutes("10")));
+
+    let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    let vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("100").toString()
+    );
+
+    let ownerBalance = await this.token.balanceOf(owner.address);
+    expect(ownerBalance.toString()).to.equal(
+      ethers.utils.parseEther("28999999900").toString()
+    );
+
+    let availableTokens = await this.tokenVesting.getAvailableTokens();
+    expect(availableTokens.toString()).to.equal(
+      ethers.utils.parseEther("25").toString()
+    );
+
+    await this.tokenVesting.revoke();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("25").toString()
+    );
+
+    ownerBalance = await this.token.balanceOf(owner.address);
+    expect(ownerBalance.toString()).to.equal(
+      ethers.utils.parseEther("28999999975").toString()
+    );
+
+    await this.tokenVesting.connect(beneficiary).release();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("25").toString()
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    await expectRevert(
+      this.tokenVesting.revoke(),
+      "revoke: token already revoked!"
+    );
+  });
 
   // Test case
   it("testing the entire workflow for token vesting", async function () {
