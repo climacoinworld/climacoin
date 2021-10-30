@@ -19,6 +19,8 @@ contract TokenVesting is Initializable {
     event TokensReleased(uint256 amount);
     event TokenVestingRevoked(address receiver, uint256 amount);
 
+    // owner of this contract
+    address private _owner;
     // beneficiary of tokens after they are released
     address private _beneficiary;
 
@@ -29,7 +31,6 @@ contract TokenVesting is Initializable {
     uint256 private _releasesCount;
     uint256 private _released;
 
-    address private _revoker;
     bool private _revocable;
     bool private _revoked;
 
@@ -45,7 +46,6 @@ contract TokenVesting is Initializable {
      * @param duration duration in seconds of each release
      * @param releasesCount total amount of upcoming releases
      * @param revocable whether the vesting is revocable or not
-     * @param revoker address who can revoke funds
      */
     function initialize(
         address token,
@@ -53,8 +53,7 @@ contract TokenVesting is Initializable {
         uint256 start,
         uint256 duration,
         uint256 releasesCount,
-        bool revocable,
-        address revoker
+        bool revocable
     ) public virtual initializer {
         require(
             beneficiary != address(0),
@@ -63,10 +62,6 @@ contract TokenVesting is Initializable {
         require(
             token != address(0),
             "TokenVesting: token is the zero address!"
-        );
-        require(
-            revoker != address(0),
-            "TokenVesting: revoker is the zero address!"
         );
         require(duration > 0, "TokenVesting: duration is 0!");
         require(releasesCount > 0, "TokenVesting: releases count is 0!");
@@ -83,7 +78,7 @@ contract TokenVesting is Initializable {
         _start = start;
         _finish = start.add(_releasesCount.mul(_duration));
 
-        _revoker = revoker;
+        _owner = msg.sender;
     }
 
     // -----------------------------------------------------------------------
@@ -149,8 +144,8 @@ contract TokenVesting is Initializable {
     /**
      * @return address, who allowed to revoke.
      */
-    function revoker() public view returns (address) {
-        return _revoker;
+    function owner() public view returns (address) {
+        return _owner;
     }
 
     function getAvailableTokens() public view returns (uint256) {
@@ -182,7 +177,7 @@ contract TokenVesting is Initializable {
      * @param receiver Address who should receive tokens
      */
     function revoke(address receiver) public {
-        require(msg.sender == _revoker, "revoke: unauthorized sender!");
+        require(msg.sender == _owner, "revoke: unauthorized sender!");
         require(_revocable, "revoke: cannot revoke!");
         require(!_revoked, "revoke: token already revoked!");
 

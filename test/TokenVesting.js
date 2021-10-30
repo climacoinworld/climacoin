@@ -6,7 +6,7 @@ const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 // Start test block
 describe("TokenVesting (proxy)", function () {
   beforeEach(async function () {
-    [owner, beneficiary, revoker, _] = await ethers.getSigners();
+    [owner, beneficiary, _] = await ethers.getSigners();
 
     let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
     this.token = await upgrades.deployProxy(
@@ -29,7 +29,6 @@ describe("TokenVesting (proxy)", function () {
         this.duration.toString(),
         this.releasesCount.toString(),
         this.revocable,
-        revoker.address,
       ],
       { initializer: "initialize" }
     );
@@ -71,8 +70,8 @@ describe("TokenVesting (proxy)", function () {
     let vestingRevoked = await this.tokenVesting.revoked();
     expect(vestingRevoked).to.equal(false);
 
-    let vestingRevoker = await this.tokenVesting.revoker();
-    expect(vestingRevoker).to.equal(revoker.address);
+    let vestingOwner = await this.tokenVesting.owner();
+    expect(vestingOwner).to.equal(owner.address);
 
     let vestingAvailableTokens = await this.tokenVesting.getAvailableTokens();
     expect(vestingAvailableTokens.toString()).to.equal("0");
@@ -201,6 +200,9 @@ describe("TokenVesting (proxy)", function () {
   });
 
   // Test case
+  it("test revoke", async function () {});
+
+  // Test case
   it("testing the entire workflow for token vesting", async function () {
     let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
@@ -212,8 +214,8 @@ describe("TokenVesting (proxy)", function () {
       ethers.utils.parseEther("100").toString()
     );
 
-    let revokerAddr = await this.tokenVesting.revoker();
-    expect(revokerAddr).to.equal(revoker.address);
+    let ownerAddr = await this.tokenVesting.owner();
+    expect(ownerAddr).to.equal(owner.address);
 
     // Try to claim should be failed
     await expectRevert(
@@ -221,7 +223,7 @@ describe("TokenVesting (proxy)", function () {
       "release: No tokens are due!"
     );
     await expectRevert(
-      this.tokenVesting.revoke(revokerAddr),
+      this.tokenVesting.connect(beneficiary).revoke(ownerAddr),
       "revoke: unauthorized sender!"
     );
 
@@ -241,7 +243,7 @@ describe("TokenVesting (proxy)", function () {
 
     // Increase to second release and revoke
     await time.increase(parseInt(time.duration.weeks("10")));
-    await this.tokenVesting.connect(revoker).revoke(beneficiary.address);
+    await this.tokenVesting.connect(owner).revoke(beneficiary.address);
 
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
