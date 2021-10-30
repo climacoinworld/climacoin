@@ -17,7 +17,7 @@ contract TokenVesting is Initializable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     event TokensReleased(uint256 amount);
-    event TokenVestingRevoked(address receiver, uint256 amount);
+    event TokenVestingRevoked(uint256 amount);
 
     // owner of this contract
     address private _owner;
@@ -174,9 +174,8 @@ contract TokenVesting is Initializable {
     /**
      * @notice Allows the owner to revoke the vesting. Tokens already vested
      * remain in the contract, the rest are returned to the owner.
-     * @param receiver Address who should receive tokens
      */
-    function revoke(address receiver) public {
+    function revoke() public {
         require(msg.sender == _owner, "revoke: unauthorized sender!");
         require(_revocable, "revoke: cannot revoke!");
         require(!_revoked, "revoke: token already revoked!");
@@ -186,9 +185,9 @@ contract TokenVesting is Initializable {
         uint256 refund = balance.sub(unreleased);
 
         _revoked = true;
-        _token.safeTransfer(receiver, refund);
+        _token.safeTransfer(_owner, refund);
 
-        emit TokenVestingRevoked(receiver, refund);
+        emit TokenVestingRevoked(refund);
     }
 
     // -----------------------------------------------------------------------

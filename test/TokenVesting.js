@@ -214,16 +214,13 @@ describe("TokenVesting (proxy)", function () {
       ethers.utils.parseEther("100").toString()
     );
 
-    let ownerAddr = await this.tokenVesting.owner();
-    expect(ownerAddr).to.equal(owner.address);
-
     // Try to claim should be failed
     await expectRevert(
       this.tokenVesting.connect(beneficiary).release(),
       "release: No tokens are due!"
     );
     await expectRevert(
-      this.tokenVesting.connect(beneficiary).revoke(ownerAddr),
+      this.tokenVesting.connect(beneficiary).revoke(),
       "revoke: unauthorized sender!"
     );
 
@@ -243,11 +240,16 @@ describe("TokenVesting (proxy)", function () {
 
     // Increase to second release and revoke
     await time.increase(parseInt(time.duration.weeks("10")));
-    await this.tokenVesting.connect(owner).revoke(beneficiary.address);
+    await this.tokenVesting.connect(owner).revoke();
 
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("75").toString()
+      ethers.utils.parseEther("25").toString()
+    );
+
+    let ownerBalance = await this.token.balanceOf(owner.address);
+    expect(ownerBalance.toString()).to.equal(
+      ethers.utils.parseEther("28999999950").toString()
     );
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
@@ -259,7 +261,7 @@ describe("TokenVesting (proxy)", function () {
     await this.tokenVesting.connect(beneficiary).release();
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("100").toString()
+      ethers.utils.parseEther("50").toString()
     );
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
