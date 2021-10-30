@@ -408,13 +408,21 @@ describe("TokenVesting (proxy) - odd token divison", function () {
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal("36666666666666666668");
 
-    await time.increase(parseInt(time.duration.weeks("10")));
-    await this.tokenVesting.connect(beneficiary).release();
+    let ownerBalance = await this.token.balanceOf(owner.address);
+    expect(ownerBalance.toString()).to.equal("28999999890000000000000000000");
 
-    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
-    expect(beneficiaryBalance.toString()).to.equal("110000000000000000000");
+    await this.tokenVesting.connect(owner).revoke();
+
+    ownerBalance = await this.token.balanceOf(owner.address);
+    expect(ownerBalance.toString()).to.equal("28999999926666666666666666668");
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal("0");
+
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await expectRevert(
+      this.tokenVesting.connect(beneficiary).release(),
+      "release: No tokens are due!"
+    );
   });
 });
