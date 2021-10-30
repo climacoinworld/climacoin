@@ -1,0 +1,8 @@
+{
+  "token": "0x42f4894D7Df37AD81bAc563E619540E73aE302f4",
+  "beneficiary": "0x779A565EEc2eBE9746Dff250A86b1D3172B4030F",
+  "start": "1635603300",
+  "duration": "300",
+  "releasesCount": "4",
+  "revocable": true
+}
