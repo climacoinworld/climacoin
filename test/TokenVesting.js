@@ -332,3 +332,89 @@ describe("TokenVesting (proxy)", function () {
     );
   });
 });
+
+// Start test block
+describe("TokenVesting (proxy) - odd token divison", function () {
+  beforeEach(async function () {
+    [owner, beneficiary, _] = await ethers.getSigners();
+
+    let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
+    this.token = await upgrades.deployProxy(
+      TokenFactory,
+      ["ClimaCoin Token", "CLC", 29000000000],
+      { initializer: "initialize" }
+    );
+
+    let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
+    this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
+    this.releasesCount = 3;
+    this.duration = time.duration.weeks("10");
+    this.revocable = true;
+    this.tokenVesting = await upgrades.deployProxy(
+      TokenVestingFactory,
+      [
+        this.token.address,
+        beneficiary.address,
+        this.startTime.toString(),
+        this.duration.toString(),
+        this.releasesCount.toString(),
+        this.revocable,
+      ],
+      { initializer: "initialize" }
+    );
+
+    await this.token.transfer(
+      this.tokenVesting.address,
+      ethers.utils.parseEther("100")
+    );
+  });
+
+  // Test case
+  it("test odd token division", async function () {
+    let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    let vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("100").toString()
+    );
+
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await time.increase(parseInt(time.duration.minutes("10")));
+    await this.tokenVesting.connect(beneficiary).release();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal("33333333333333333333");
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal("66666666666666666667");
+
+    await this.token.transfer(
+      this.tokenVesting.address,
+      ethers.utils.parseEther("10")
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal("76666666666666666667");
+
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await this.tokenVesting.connect(beneficiary).release();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal("73333333333333333332");
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal("36666666666666666668");
+
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await this.tokenVesting.connect(beneficiary).release();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal("110000000000000000000");
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal("0");
+  });
+});
