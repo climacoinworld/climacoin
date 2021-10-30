@@ -161,6 +161,46 @@ describe("TokenVesting (proxy)", function () {
   });
 
   // Test case
+  it("test adding more tokens to the contract during vesting", async function () {
+    await time.increase(parseInt(time.duration.weeks("10")));
+    await time.increase(parseInt(time.duration.minutes("10")));
+    await this.tokenVesting.connect(beneficiary).release();
+
+    let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("25").toString()
+    );
+
+    let vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("75").toString()
+    );
+
+    await this.token.transfer(
+      this.tokenVesting.address,
+      ethers.utils.parseEther("100")
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("175").toString()
+    );
+
+    await time.increase(parseInt(time.duration.weeks("20")));
+    await this.tokenVesting.connect(beneficiary).release();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("150").toString()
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("50").toString()
+    );
+  });
+
+  // Test case
   it("testing the entire workflow for token vesting", async function () {
     let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
