@@ -1,5 +1,13 @@
 # ClimaCoin Smart Contracts
 
+### Smart Contracts
+
+Smart contracts included in this repo:
+- `ClimaCoinToken.sol` - The ClimaCoin token which can be deployed on both Ethereum Blockchain (ERC-20) and Binance Smart Chain (BEP-20). 
+- `TokenVesting.sol` - A token holder contract that can release its tokens gradually like a typical vesting scheme. Can be used for distribution.
+  
+All the contracts in this repository are **upgradeable**, meaning that they can be benefit from improvements in the future. Read more about it here: [Writing Upgradeable Contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable).
+
 ### Installation
 
 Clone this repository:  
@@ -16,7 +24,10 @@ For UNIT tests, run:
 
 ### Deployment
 
-Before running the deployment scripts, you need to set up some environment variables. Replace the parameters inside `./scripts/token_vesting_params.json` with your own parameters:  
+To deploy the token contract, run:  
+`npx hardhat run scripts/deploy_token.js --network [NETWORK]`  
+  
+Before running the deployment script for vesting, you need to set up some environment variables. Replace the parameters inside `./scripts/token_vesting_params.json` with your own parameters:  
 - `token`: Address of the token. This token will be received by the beneficiary.
 - `beneficiary`: Address of the beneficiary, which receives vested tokens.
 - `start`: Time when vesting start (_should be the UNIX timestamp of a certain date. e.g. 1635760800 for 01.11.2021 12:00:00_).
@@ -24,7 +35,7 @@ Before running the deployment scripts, you need to set up some environment varia
 - `releasesCount`: Total amount of upcoming releases.
 - `revocable`: Specifies if the owner of the vesting contract can revoke the contract in the future.
 
-To deploy the contract, run:  
+To deploy the vesting contract, run:  
 `npx hardhat run scripts/deploy_vesting.js --network [NETWORK]`  
 
 Available networks can be found in `hardhat.config.js`.
