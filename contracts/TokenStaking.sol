@@ -74,9 +74,9 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         tokenContract = IERC20Upgradeable(_stakedToken);
         //define packages here
-        _definePackage("Silver Package", 30, 15, 8); // in 30 days you receive: 15% of staked token
-        _definePackage("Gold Package", 60, 30, 18);
-        _definePackage("Platinum Package", 90, 45, 30);
+        _definePackage("silver", 7, 8, 3); // in 7 days you receive: 8% of staked token
+        _definePackage("gold", 30, 12, 10);
+        _definePackage("platinum", 60, 15, 20);
     }
 
     function checkStakeReward(address _address, uint256 stakeIndex)
