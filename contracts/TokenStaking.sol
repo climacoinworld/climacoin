@@ -164,6 +164,9 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
             "The stake is already withdrawn."
         );
 
+        // close the staking package (fix the withdrawn timestamp)
+        stakes[msg.sender][stakeIndex]._withdrawnTimestamp = block.timestamp;
+
         // decrease total balance
         totalStakedFunds = totalStakedFunds.sub(
             stakes[msg.sender][stakeIndex]._amount
@@ -173,9 +176,6 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         totalStakedBalance[msg.sender] = totalStakedBalance[msg.sender].sub(
             stakes[msg.sender][stakeIndex]._amount
         );
-
-        // close the staking package (fix the withdrawn timestamp)
-        stakes[msg.sender][stakeIndex]._withdrawnTimestamp = block.timestamp;
 
         (uint256 reward, uint256 daysSpent) = checkStakeReward(
             msg.sender,
@@ -205,18 +205,23 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
 
     function forceWithdraw(uint256 stakeIndex) public {
         require(
-            stakes[msg.sender][stakeIndex]._amount > 0,
-            "The stake you are searching for is not defined"
+            stakeIndex < stakes[msg.sender].length,
+            "The stake you are searching for is not defined."
         );
         require(
             stakes[msg.sender][stakeIndex]._withdrawnTimestamp == 0,
-            "Stake already withdrawn"
+            "The stake is already withdrawn."
         );
 
+        // close the staking package (fix the withdrawn timestamp)
         stakes[msg.sender][stakeIndex]._withdrawnTimestamp = block.timestamp;
+
+        // decrease total balance
         totalStakedFunds = totalStakedFunds.sub(
             stakes[msg.sender][stakeIndex]._amount
         );
+
+        // decrease user total staked balance
         totalStakedBalance[msg.sender] = totalStakedBalance[msg.sender].sub(
             stakes[msg.sender][stakeIndex]._amount
         );
@@ -224,13 +229,13 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         uint256 daysSpent = block
             .timestamp
             .sub(stakes[msg.sender][stakeIndex]._timestamp)
-            .div(TIME_UNIT); //86400
+            .div(TIME_UNIT);
 
         require(
             daysSpent >
                 packages[stakes[msg.sender][stakeIndex]._packageName]
                     ._daysBlocked,
-            "cannot unstake sooner than the blocked time time"
+            "Cannot unstake sooner than the blocked time."
         );
 
         tokenContract.transfer(
@@ -256,10 +261,10 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         onlyRewardProvider
         returns (bool)
     {
-        //transfer from (need allowance)
         rewardProviderTokenAllowance = rewardProviderTokenAllowance.add(
             _amount
         );
+        // transfer from the caller to this contract (need allowance)
         tokenContract.transferFrom(msg.sender, address(this), _amount);
 
         emit NativeTokenRewardAdded(msg.sender, _amount);
@@ -273,7 +278,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     {
         require(
             _amount <= rewardProviderTokenAllowance,
-            "you cannot withdraw this amount"
+            "You cannot withdraw this amount."
         );
         rewardProviderTokenAllowance = rewardProviderTokenAllowance.sub(
             _amount
