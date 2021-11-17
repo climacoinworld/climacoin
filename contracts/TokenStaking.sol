@@ -10,10 +10,10 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 contract TokenStaking is Initializable, AccessControlUpgradeable {
     using SafeMathUpgradeable for uint256;
 
-    bytes32 public constant REWARD_PROVIDER = keccak256("REWARD_PROVIDER"); // i upgraded solc and used REWARD_PROVIDER instead of whitelist role and DEFAULT_ADMIN_ROLE instead of whiteloist admin
-    uint256 private constant TIME_UNIT = 86400;
-    // we can improve this with a "unstaked:false" flag when the user force withdraws the funds
-    // so he can collect the reward later
+    bytes32 public constant REWARD_PROVIDER_ROLE =
+        keccak256("REWARD_PROVIDER_ROLE");
+    uint256 private constant TIME_UNIT = 86400; // 1 day in seconds
+
     struct Stake {
         uint256 _amount;
         uint256 _timestamp;
@@ -54,8 +54,8 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
 
     modifier onlyRewardProvider() {
         require(
-            hasRole(REWARD_PROVIDER, _msgSender()),
-            "caller does not have the REWARD_PROVIDER role"
+            hasRole(REWARD_PROVIDER_ROLE, _msgSender()),
+            "The caller does not have the REWARD_PROVIDER_ROLE role."
         );
         _;
     }
@@ -63,7 +63,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     modifier onlyMaintainer() {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            "caller does not have the Maintainer role"
+            "The caller does not have the DEFAULT_ADMIN_ROLE role."
         );
         _;
     }
@@ -71,12 +71,14 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     function initialize(address _stakedToken) public virtual initializer {
         __AccessControl_init();
 
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         tokenContract = IERC20Upgradeable(_stakedToken);
-        //define packages here
-        _definePackage("silver", 7, 8, 3); // in 7 days you receive: 8% of staked token
-        _definePackage("gold", 30, 12, 10);
-        _definePackage("platinum", 60, 15, 20);
+
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(REWARD_PROVIDER_ROLE, _msgSender());
+
+        _definePackage("silver", 7, 8, 3); // in 7 days you receive 8% of the staked tokens. The tokens are blocked for 3 days.
+        _definePackage("gold", 30, 12, 10); // in 30 days you receive 12% of the staked tokens. The tokens are blocked for 10 days.
+        _definePackage("platinum", 60, 15, 20); // in 60 days you receive 15% of the staked tokens. The tokens are blocked for 20 days.
     }
 
     function checkStakeReward(address _address, uint256 stakeIndex)
@@ -96,9 +98,8 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
             stakes[_address][stakeIndex]._packageName
         ]._packageInterest;
 
-        timeDiff = currentTime.sub(stakingTime).div(TIME_UNIT);
-
-        uint256 yieldPeriods = timeDiff.div(daysLocked); // the _days is in seconds for now so can fucking test stuff
+        timeDiff = currentTime.sub(stakingTime).div(TIME_UNIT); // the time in days
+        uint256 yieldPeriods = timeDiff.div(daysLocked);
 
         yieldReward = 0;
         uint256 totalStake = stakes[_address][stakeIndex]._amount;
@@ -106,29 +107,26 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         // for each period of days defined in the package, compound the interest
         while (yieldPeriods > 0) {
             uint256 currentReward = totalStake.mul(packageInterest).div(100);
-
             totalStake = totalStake.add(currentReward);
-
             yieldReward = yieldReward.add(currentReward);
-
             yieldPeriods--;
         }
     }
 
     function stakeTokens(uint256 _amount, bytes32 _packageName) public {
-        require(paused == false, "Staking is paused");
-        require(_amount > 0, " stake a positive number of tokens ");
+        require(paused == false, "The staking is paused.");
+        require(_amount > 0, "You need to stake a positive number of tokens.");
         require(
             packages[_packageName]._daysLocked > 0,
-            "there is no staking package with the declared name, or the staking package is poorly formated"
+            "There is no staking package with the declared name or the staking package is poorly formated."
         );
 
-        //add to stake sum of address
+        // add to stake sum of address
         totalStakedBalance[msg.sender] = totalStakedBalance[msg.sender].add(
             _amount
         );
 
-        //add to stakes
+        // add to stakes
         Stake memory currentStake;
         currentStake._amount = _amount;
         currentStake._timestamp = block.timestamp;
@@ -136,16 +134,16 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         currentStake._withdrawnTimestamp = 0;
         stakes[msg.sender].push(currentStake);
 
-        //if user is not declared as a staker, push him into the staker array
+        // if the user is not declared as a staker, push him into the staker array
         if (!hasStaked[msg.sender]) {
             stakers.push(msg.sender);
         }
 
-        //update the bool mapping of past and current stakers
+        // update the bool mapping of past and current stakers
         hasStaked[msg.sender] = true;
         totalStakedFunds = totalStakedFunds.add(_amount);
 
-        //transfer from (need allowance)
+        // transfer from the caller to this contract (need allowance)
         tokenContract.transferFrom(msg.sender, address(this), _amount);
 
         emit StakeAdded(
@@ -159,11 +157,11 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     function unstakeTokens(uint256 stakeIndex) public {
         require(
             stakeIndex < stakes[msg.sender].length,
-            "The stake you are searching for is not defined"
+            "The stake you are searching for is not defined."
         );
         require(
             stakes[msg.sender][stakeIndex]._withdrawnTimestamp == 0,
-            "Stake already withdrawn"
+            "The stake is already withdrawn."
         );
 
         // decrease total balance
@@ -171,12 +169,12 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
             stakes[msg.sender][stakeIndex]._amount
         );
 
-        //decrease user total staked balance
+        // decrease user total staked balance
         totalStakedBalance[msg.sender] = totalStakedBalance[msg.sender].sub(
             stakes[msg.sender][stakeIndex]._amount
         );
 
-        //close the staking package (fix the withdrawn timestamp)
+        // close the staking package (fix the withdrawn timestamp)
         stakes[msg.sender][stakeIndex]._withdrawnTimestamp = block.timestamp;
 
         (uint256 reward, uint256 daysSpent) = checkStakeReward(
@@ -186,14 +184,14 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
 
         require(
             rewardProviderTokenAllowance > reward,
-            "Token creators did not place enough liquidity in the contract for your reward to be paid"
+            "Token creators did not place enough liquidity in the contract for your reward to be paid."
         );
 
         require(
             daysSpent >
                 packages[stakes[msg.sender][stakeIndex]._packageName]
                     ._daysBlocked,
-            "cannot unstake sooner than the blocked time"
+            "Cannot unstake sooner than the blocked time."
         );
 
         rewardProviderTokenAllowance = rewardProviderTokenAllowance.sub(reward);
