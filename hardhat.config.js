@@ -1,5 +1,9 @@
 // hardhat.config.js
-const { alchemyApiKeyGoerli, alchemyApiKeyRinkeby, mnemonic } = require("./secrets.json");
+const {
+  alchemyApiKeyGoerli,
+  alchemyApiKeyRinkeby,
+  mnemonic,
+} = require("./secrets.json");
 
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-web3");
