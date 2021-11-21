@@ -35,9 +35,9 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     mapping(address => Stake[]) public stakes;
     mapping(address => bool) public hasStaked;
     address[] stakers;
-    uint256 rewardProviderTokenAllowance = 0;
-    uint256 public totalStakedFunds = 0;
-    bool public paused = false;
+    uint256 rewardProviderTokenAllowance;
+    uint256 public totalStakedFunds;
+    bool public paused;
 
     event NativeTokenRewardAdded(address indexed _from, uint256 _val);
     event NativeTokenRewardRemoved(address indexed _to, uint256 _val);
@@ -72,13 +72,16 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         __AccessControl_init();
 
         tokenContract = IERC20Upgradeable(_stakedToken);
+        rewardProviderTokenAllowance = 0;
+        totalStakedFunds = 0;
+        paused = false;
 
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(REWARD_PROVIDER_ROLE, _msgSender());
 
-        _definePackage("silver", 7, 8, 3); // in 7 days you receive 8% of the staked tokens. The tokens are blocked for 3 days.
-        _definePackage("gold", 30, 12, 10); // in 30 days you receive 12% of the staked tokens. The tokens are blocked for 10 days.
-        _definePackage("platinum", 60, 15, 20); // in 60 days you receive 15% of the staked tokens. The tokens are blocked for 20 days.
+        _definePackage("silver", 7, 3, 8); // in 7 days you receive 8% of the staked tokens. The tokens are blocked for 3 days.
+        _definePackage("gold", 30, 10, 12); // in 30 days you receive 12% of the staked tokens. The tokens are blocked for 10 days.
+        _definePackage("platinum", 60, 20, 15); // in 60 days you receive 15% of the staked tokens. The tokens are blocked for 20 days.
     }
 
     function checkStakeReward(address _address, uint256 stakeIndex)
