@@ -7,6 +7,10 @@ const REWARD_PROVIDER_ROLE = web3.utils.keccak256("REWARD_PROVIDER_ROLE");
 const DEFAULT_ADMIN_ROLE =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
+const SILVER = unpack("silver");
+const GOLD = unpack("gold");
+const PLATINUM = unpack("platinum");
+
 function unpack(str) {
   let buf = Buffer.from(str);
   strBytes = "";
@@ -23,7 +27,7 @@ describe("TokenStaking (proxy)", function () {
   let token;
 
   beforeEach(async function () {
-    [owner, beneficiary, _] = await ethers.getSigners();
+    [owner, user1, user2, user3, _] = await ethers.getSigners();
 
     let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
     token = await upgrades.deployProxy(
@@ -31,6 +35,10 @@ describe("TokenStaking (proxy)", function () {
       ["ClimaCoin Token", "CLC", 29000000000],
       { initializer: "initialize" }
     );
+
+    await token.transfer(user1.address, ethers.utils.parseEther("2000000"));
+    await token.transfer(user2.address, ethers.utils.parseEther("2000000"));
+    await token.transfer(user3.address, ethers.utils.parseEther("2000000"));
 
     let TokenStakingFactory = await ethers.getContractFactory("TokenStaking");
     tokenStaking = await upgrades.deployProxy(
@@ -77,11 +85,11 @@ describe("TokenStaking (proxy)", function () {
         let package;
 
         before(async () => {
-          package = await tokenStaking.packages(unpack("silver"));
+          package = await tokenStaking.packages(SILVER);
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(unpack("silver"));
+          expect(package._packageName).to.be.equal(SILVER);
         });
 
         it("has a days period", () => {
@@ -101,11 +109,11 @@ describe("TokenStaking (proxy)", function () {
         let package;
 
         before(async () => {
-          package = await tokenStaking.packages(unpack("gold"));
+          package = await tokenStaking.packages(GOLD);
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(unpack("gold"));
+          expect(package._packageName).to.be.equal(GOLD);
         });
 
         it("has a days period", () => {
@@ -125,11 +133,11 @@ describe("TokenStaking (proxy)", function () {
         let package;
 
         before(async () => {
-          package = await tokenStaking.packages(unpack("platinum"));
+          package = await tokenStaking.packages(PLATINUM);
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(unpack("platinum"));
+          expect(package._packageName).to.be.equal(PLATINUM);
         });
 
         it("has a days period", () => {
@@ -143,6 +151,75 @@ describe("TokenStaking (proxy)", function () {
         it("has a percentage interest", () => {
           expect(package._packageInterest.toString()).to.equal("15");
         });
+      });
+    });
+  });
+
+  describe("Functions", () => {
+    describe("stakeTokens", () => {
+      beforeEach(async () => {
+        await token
+          .connect(user1)
+          .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+        await token
+          .connect(user2)
+          .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+      });
+
+      it("should revert staking on pause", async () => {
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("80"), GOLD);
+        await tokenStaking.pauseStaking();
+
+        await expectRevert(
+          tokenStaking
+            .connect(user1)
+            .stakeTokens(ethers.utils.parseEther("80"), GOLD),
+          "The staking is paused."
+        );
+      });
+
+      it("should revet if _amount !> 0", async () => {
+        await expectRevert(
+          tokenStaking.connect(user1).stakeTokens(0, SILVER),
+          "You need to stake a positive number of tokens."
+        );
+      });
+
+      it("should revert if no staking package", async () => {
+        await expectRevert(
+          tokenStaking
+            .connect(user1)
+            .stakeTokens(ethers.utils.parseEther("10"), REWARD_PROVIDER_ROLE),
+          "There is no staking package with the declared name or the staking package is poorly formated."
+        );
+      });
+
+      it("should add to totalStakedBalance", async () => {
+        expect(
+          (await tokenStaking.totalStakedBalance(user1.address)).toString()
+        ).to.equal("0");
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("10"), SILVER);
+
+        expect(
+          (await tokenStaking.totalStakedBalance(user1.address)).toString()
+        ).to.equal(ethers.utils.parseEther("10").toString());
+
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("5"), GOLD);
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("15"), PLATINUM);
+        await tokenStaking
+          .connect(user2)
+          .stakeTokens(ethers.utils.parseEther("50"), GOLD);
+        expect(
+          (await tokenStaking.totalStakedBalance(user1.address)).toString()
+        ).to.equal(ethers.utils.parseEther("30").toString());
       });
     });
   });
