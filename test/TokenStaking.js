@@ -647,4 +647,188 @@ describe("TokenStaking (proxy)", function () {
       });
     });
   });
+
+  describe("forceWithdraw", () => {
+    beforeEach(async () => {
+      await token
+        .connect(user1)
+        .approve(tokenStaking.address, ethers.utils.parseEther("20000"));
+      await token
+        .connect(user2)
+        .approve(tokenStaking.address, ethers.utils.parseEther("20000"));
+
+      await token.approve(
+        tokenStaking.address,
+        ethers.utils.parseEther("2000000")
+      );
+      await tokenStaking.addStakedTokenReward(ethers.utils.parseEther("100"));
+    });
+
+    it("should revert if stake not defined", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+
+      await expectRevert(
+        tokenStaking.connect(user1).forceWithdraw("1"),
+        "The stake you are searching for is not defined"
+      );
+
+      await time.increase(time.duration.days(16));
+
+      await tokenStaking.connect(user1).forceWithdraw(0);
+    });
+
+    it("should revert if stake already withdrawn", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(31));
+
+      await tokenStaking.connect(user1).unstakeTokens(0);
+
+      await expectRevert(
+        tokenStaking.connect(user1).forceWithdraw(0),
+        "The stake is already withdrawn."
+      );
+    });
+
+    it("should close the staking package(set _withdrawnTimestamp)", async () => {
+      let stake;
+      let timestamp = new Date(Math.floor(Date.now() / 1000));
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      stake = await tokenStaking.stakes(user1.address, 0);
+      await time.increase(time.duration.days(31));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).forceWithdraw(0);
+      stake = await tokenStaking.stakes(user1.address, 0);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      stake = await tokenStaking.stakes(user1.address, 1);
+      await time.increase(time.duration.days(100));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).forceWithdraw(1);
+      stake = await tokenStaking.stakes(user1.address, 1);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      stake = await tokenStaking.stakes(user1.address, 2);
+      await time.increase(time.duration.days(31));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).forceWithdraw(2);
+      stake = await tokenStaking.stakes(user1.address, 2);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+    });
+
+    it("should decrease total balance", async () => {
+      expect(await tokenStaking.totalStakedFunds()).to.equal("0");
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(100));
+
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("160")
+      );
+      await tokenStaking.connect(user1).forceWithdraw(0);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("110")
+      );
+
+      await tokenStaking.connect(user1).forceWithdraw(1);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("50")
+      );
+
+      await tokenStaking.connect(user1).forceWithdraw(2);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("0")
+      );
+    });
+
+    it("should decrease user total staked balance", async () => {
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        "0"
+      );
+      expect(await tokenStaking.totalStakedBalance(user2.address)).to.equal(
+        "0"
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(100));
+
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("160")
+      );
+
+      await tokenStaking.connect(user1).forceWithdraw(0);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("110")
+      );
+
+      await tokenStaking.connect(user1).forceWithdraw(1);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("50")
+      );
+
+      await tokenStaking.connect(user1).forceWithdraw(2);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("0")
+      );
+    });
+
+    it("should revert if try to forceWithdraw sooner than the blocked time", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(6));
+
+      await expectRevert(
+        tokenStaking.connect(user1).forceWithdraw(0),
+        "Cannot unstake sooner than the blocked time."
+      );
+
+      await time.increase(time.duration.days(10));
+      await tokenStaking.connect(user1).forceWithdraw(0);
+    });
+
+    it("should catch ForcefullyWithdrawn event", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("100"), SILVER);
+      await time.increase(time.duration.days(31));
+
+      await expect(tokenStaking.connect(user1).forceWithdraw(0))
+        .to.emit(tokenStaking, "ForcefullyWithdrawn")
+        .withArgs(user1.address, "0");
+    });
+  });
 });
