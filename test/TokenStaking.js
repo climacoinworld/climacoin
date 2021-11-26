@@ -56,13 +56,11 @@ describe("TokenStaking (proxy)", function () {
   // Test case
   describe("check basic init", () => {
     it("should set a staked token", async () => {
-      expect((await tokenStaking.tokenContract()).toString()).to.equal(
-        token.address
-      );
+      expect(await tokenStaking.tokenContract()).to.equal(token.address);
     });
 
     it("has a totalStakedFunds", async () => {
-      expect((await tokenStaking.totalStakedFunds()).toString()).to.equal("0");
+      expect(await tokenStaking.totalStakedFunds()).to.equal("0");
     });
 
     it("has a paused", async () => {
@@ -98,15 +96,15 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("30");
+          expect(package._daysLocked).to.equal("30");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("15");
+          expect(package._daysBlocked).to.equal("15");
         });
 
         it("has a percentage interest", () => {
-          expect(package._packageInterest.toString()).to.equal("8");
+          expect(package._packageInterest).to.equal("8");
         });
       });
 
@@ -122,15 +120,15 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("60");
+          expect(package._daysLocked).to.equal("60");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("30");
+          expect(package._daysBlocked).to.equal("30");
         });
 
         it("has a percentage interest", () => {
-          expect(package._packageInterest.toString()).to.equal("18");
+          expect(package._packageInterest).to.equal("18");
         });
       });
 
@@ -146,15 +144,15 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("90");
+          expect(package._daysLocked).to.equal("90");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("45");
+          expect(package._daysBlocked).to.equal("45");
         });
 
         it("has a percentage interest", () => {
-          expect(package._packageInterest.toString()).to.equal("30");
+          expect(package._packageInterest).to.equal("30");
         });
       });
     });
@@ -202,16 +200,16 @@ describe("TokenStaking (proxy)", function () {
       });
 
       it("should add to totalStakedBalance", async () => {
-        expect(
-          (await tokenStaking.totalStakedBalance(user1.address)).toString()
-        ).to.equal("0");
+        expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+          "0"
+        );
         await tokenStaking
           .connect(user1)
           .stakeTokens(ethers.utils.parseEther("10"), SILVER);
 
-        expect(
-          (await tokenStaking.totalStakedBalance(user1.address)).toString()
-        ).to.equal(ethers.utils.parseEther("10").toString());
+        expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+          ethers.utils.parseEther("10")
+        );
 
         await tokenStaking
           .connect(user1)
@@ -222,9 +220,9 @@ describe("TokenStaking (proxy)", function () {
         await tokenStaking
           .connect(user2)
           .stakeTokens(ethers.utils.parseEther("50"), GOLD);
-        expect(
-          (await tokenStaking.totalStakedBalance(user1.address)).toString()
-        ).to.equal(ethers.utils.parseEther("30").toString());
+        expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+          ethers.utils.parseEther("30")
+        );
       });
 
       it("should add to stakes", async () => {
@@ -234,27 +232,23 @@ describe("TokenStaking (proxy)", function () {
           .connect(user1)
           .stakeTokens(ethers.utils.parseEther("10"), SILVER);
         let stake = await tokenStaking.stakes(user1.address, 0);
-        expect(stake._amount.toString()).to.equal(
-          ethers.utils.parseEther("10").toString()
-        );
+        expect(stake._amount).to.equal(ethers.utils.parseEther("10"));
         expect(new Date(parseInt(stake._timestamp))).to.afterOrEqualDate(
           new Date(timestamp)
         );
         expect(stake._packageName).to.equal(SILVER);
-        expect(stake._withdrawnTimestamp.toString()).to.equal("0");
+        expect(stake._withdrawnTimestamp).to.equal("0");
 
         await tokenStaking
           .connect(user1)
           .stakeTokens(ethers.utils.parseEther("20"), PLATINUM);
         stake = await tokenStaking.stakes(user1.address, 1);
-        expect(stake._amount.toString()).to.equal(
-          ethers.utils.parseEther("20").toString()
-        );
+        expect(stake._amount).to.equal(ethers.utils.parseEther("20"));
         expect(new Date(parseInt(stake._timestamp))).to.afterOrEqualDate(
           new Date(timestamp)
         );
         expect(stake._packageName).to.equal(PLATINUM);
-        expect(stake._withdrawnTimestamp.toString()).to.equal("0");
+        expect(stake._withdrawnTimestamp).to.equal("0");
       });
 
       it("should update hasStaked", async () => {
@@ -266,21 +260,19 @@ describe("TokenStaking (proxy)", function () {
       });
 
       it("should transfer token", async () => {
-        expect(
-          (await token.balanceOf(tokenStaking.address)).toString()
-        ).to.equal("0");
-        expect((await token.balanceOf(user1.address)).toString()).to.equal(
-          ethers.utils.parseEther("2000000").toString()
+        expect(await token.balanceOf(tokenStaking.address)).to.equal("0");
+        expect(await token.balanceOf(user1.address)).to.equal(
+          ethers.utils.parseEther("2000000")
         );
         await tokenStaking
           .connect(user1)
           .stakeTokens(ethers.utils.parseEther("100"), SILVER);
 
-        expect(
-          (await token.balanceOf(tokenStaking.address)).toString()
-        ).to.equal(ethers.utils.parseEther("100").toString());
-        expect((await token.balanceOf(user1.address)).toString()).to.equal(
-          ethers.utils.parseEther("1999900").toString()
+        expect(await token.balanceOf(tokenStaking.address)).to.equal(
+          ethers.utils.parseEther("100")
+        );
+        expect(await token.balanceOf(user1.address)).to.equal(
+          ethers.utils.parseEther("1999900")
         );
       });
 
@@ -318,9 +310,7 @@ describe("TokenStaking (proxy)", function () {
         .connect(user1)
         .stakeTokens(ethers.utils.parseEther("50"), SILVER);
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
       ).to.equal("0");
     });
 
@@ -332,16 +322,12 @@ describe("TokenStaking (proxy)", function () {
       await tokenStaking.connect(user1).unstakeTokens(0);
 
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
-      ).to.equal(ethers.utils.parseEther("4").toString());
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
+      ).to.equal(ethers.utils.parseEther("4"));
       await time.increase(time.duration.days(35));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
-      ).to.equal(ethers.utils.parseEther("4").toString());
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
+      ).to.equal(ethers.utils.parseEther("4"));
     });
 
     it("should calculate reward correctly", async () => {
@@ -360,22 +346,16 @@ describe("TokenStaking (proxy)", function () {
 
       await time.increase(time.duration.days(29));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
       ).to.equal("0");
       await time.increase(time.duration.days(1));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
-      ).to.equal(ethers.utils.parseEther("4").toString());
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
+      ).to.equal(ethers.utils.parseEther("4"));
       await time.increase(time.duration.days(30));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).yieldReward.toString()
-      ).to.equal(ethers.utils.parseEther("8.32").toString());
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
+      ).to.equal(ethers.utils.parseEther("8.32"));
       await time.increase(time.duration.days(90));
       expect(
         (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
@@ -414,15 +394,11 @@ describe("TokenStaking (proxy)", function () {
       await tokenStaking.connect(user1).unstakeTokens(0);
 
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).timeDiff.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).timeDiff
       ).to.equal("35");
       await time.increase(time.duration.days(45));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).timeDiff.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).timeDiff
       ).to.equal("35");
     });
 
@@ -433,15 +409,11 @@ describe("TokenStaking (proxy)", function () {
       await time.increase(time.duration.days(33));
 
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).timeDiff.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).timeDiff
       ).to.equal("33");
       await time.increase(time.duration.days(28));
       expect(
-        (
-          await tokenStaking.checkStakeReward(user1.address, 0)
-        ).timeDiff.toString()
+        (await tokenStaking.checkStakeReward(user1.address, 0)).timeDiff
       ).to.equal("61");
     });
   });
