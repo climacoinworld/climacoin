@@ -98,11 +98,11 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("7");
+          expect(package._daysLocked.toString()).to.equal("30");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("3");
+          expect(package._daysBlocked.toString()).to.equal("15");
         });
 
         it("has a percentage interest", () => {
@@ -122,15 +122,15 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("30");
+          expect(package._daysLocked.toString()).to.equal("60");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("10");
+          expect(package._daysBlocked.toString()).to.equal("30");
         });
 
         it("has a percentage interest", () => {
-          expect(package._packageInterest.toString()).to.equal("12");
+          expect(package._packageInterest.toString()).to.equal("18");
         });
       });
 
@@ -146,15 +146,15 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a days period", () => {
-          expect(package._daysLocked.toString()).to.equal("60");
+          expect(package._daysLocked.toString()).to.equal("90");
         });
 
         it("has a days blocked", () => {
-          expect(package._daysBlocked.toString()).to.equal("20");
+          expect(package._daysBlocked.toString()).to.equal("45");
         });
 
         it("has a percentage interest", () => {
-          expect(package._packageInterest.toString()).to.equal("15");
+          expect(package._packageInterest.toString()).to.equal("30");
         });
       });
     });
@@ -293,6 +293,156 @@ describe("TokenStaking (proxy)", function () {
           .to.emit(tokenStaking, "StakeAdded")
           .withArgs(user1.address, SILVER, ethers.utils.parseEther("100"), "0");
       });
+    });
+  });
+
+  describe("checkStakeReward", () => {
+    beforeEach(async () => {
+      await token
+        .connect(user1)
+        .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+      await token
+        .connect(user2)
+        .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+
+      await token
+        .connect(owner)
+        .approve(tokenStaking.address, ethers.utils.parseEther("2000000"));
+      await tokenStaking
+        .connect(owner)
+        .addStakedTokenReward(ethers.utils.parseEther("100"));
+    });
+
+    it("check stake reward for native token", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal("0");
+    });
+
+    it("if it was unstaked, return reward for staked period", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(35));
+      await tokenStaking.connect(user1).unstakeTokens(0);
+
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal(ethers.utils.parseEther("4").toString());
+      await time.increase(time.duration.days(35));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal(ethers.utils.parseEther("4").toString());
+    });
+
+    it("should calculate reward correctly", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("20"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("10"), GOLD);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("40"), PLATINUM);
+
+      await time.increase(time.duration.days(29));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal("0");
+      await time.increase(time.duration.days(1));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal(ethers.utils.parseEther("4").toString());
+      await time.increase(time.duration.days(30));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).yieldReward.toString()
+      ).to.equal(ethers.utils.parseEther("8.32").toString());
+      await time.increase(time.duration.days(90));
+      expect(
+        (await tokenStaking.checkStakeReward(user1.address, 0)).yieldReward
+      ).to.closeTo(
+        ethers.utils.parseEther("23.4664"),
+        ethers.utils.parseEther("0.001")
+      );
+
+      expect(
+        (await tokenStaking.checkStakeReward(user1.address, 1)).yieldReward
+      ).to.closeTo(
+        ethers.utils.parseEther("9.386"),
+        ethers.utils.parseEther("0.001")
+      );
+
+      expect(
+        (await tokenStaking.checkStakeReward(user1.address, 2)).yieldReward
+      ).to.closeTo(
+        ethers.utils.parseEther("3.924"),
+        ethers.utils.parseEther("0.0001")
+      );
+
+      expect(
+        (await tokenStaking.checkStakeReward(user1.address, 3)).yieldReward
+      ).to.closeTo(
+        ethers.utils.parseEther("12"),
+        ethers.utils.parseEther("0.0001")
+      );
+    });
+
+    it("if it was unstaked return staked period", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(35));
+      await tokenStaking.connect(user1).unstakeTokens(0);
+
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).timeDiff.toString()
+      ).to.equal("35");
+      await time.increase(time.duration.days(45));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).timeDiff.toString()
+      ).to.equal("35");
+    });
+
+    it("should calculate timeDiff correctly", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(33));
+
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).timeDiff.toString()
+      ).to.equal("33");
+      await time.increase(time.duration.days(28));
+      expect(
+        (
+          await tokenStaking.checkStakeReward(user1.address, 0)
+        ).timeDiff.toString()
+      ).to.equal("61");
     });
   });
 });
