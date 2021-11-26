@@ -34,6 +34,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^2.1.7",
     "@openzeppelin/contracts-upgradeable": "^4.3.2",
-    "@openzeppelin/test-helpers": "^0.5.15"
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "chai-datetime": "^1.8.0"
   }
 }

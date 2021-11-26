@@ -1,6 +1,11 @@
 // test/TokenStaking.js
 // Load dependencies
-const { expect } = require("chai");
+const { use, expect } = require("chai");
+
+const { solidity } = require("ethereum-waffle");
+use(solidity);
+use(require("chai-datetime"));
+
 const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 
 const REWARD_PROVIDER_ROLE = web3.utils.keccak256("REWARD_PROVIDER_ROLE");
@@ -51,7 +56,7 @@ describe("TokenStaking (proxy)", function () {
   // Test case
   describe("check basic init", () => {
     it("should set a staked token", async () => {
-      expect((await tokenStaking.tokenContract()).toString()).to.be.equal(
+      expect((await tokenStaking.tokenContract()).toString()).to.equal(
         token.address
       );
     });
@@ -65,7 +70,7 @@ describe("TokenStaking (proxy)", function () {
     });
 
     it("has a REWARD_PROVIDER_ROLE", async () => {
-      expect(await tokenStaking.REWARD_PROVIDER_ROLE()).to.be.equal(
+      expect(await tokenStaking.REWARD_PROVIDER_ROLE()).to.equal(
         REWARD_PROVIDER_ROLE
       );
     });
@@ -73,11 +78,11 @@ describe("TokenStaking (proxy)", function () {
     it("should set roles accordingly", async () => {
       expect(
         await tokenStaking.hasRole(DEFAULT_ADMIN_ROLE, owner.address)
-      ).to.be.equal(true);
+      ).to.equal(true);
 
       expect(
         await tokenStaking.hasRole(REWARD_PROVIDER_ROLE, owner.address)
-      ).to.be.equal(true);
+      ).to.equal(true);
     });
 
     describe("should define packages", () => {
@@ -89,7 +94,7 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(SILVER);
+          expect(package._packageName).to.equal(SILVER);
         });
 
         it("has a days period", () => {
@@ -113,7 +118,7 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(GOLD);
+          expect(package._packageName).to.equal(GOLD);
         });
 
         it("has a days period", () => {
@@ -137,7 +142,7 @@ describe("TokenStaking (proxy)", function () {
         });
 
         it("has a name", async () => {
-          expect(package._packageName).to.be.equal(PLATINUM);
+          expect(package._packageName).to.equal(PLATINUM);
         });
 
         it("has a days period", () => {
@@ -220,6 +225,73 @@ describe("TokenStaking (proxy)", function () {
         expect(
           (await tokenStaking.totalStakedBalance(user1.address)).toString()
         ).to.equal(ethers.utils.parseEther("30").toString());
+      });
+
+      it("should add to stakes", async () => {
+        let timestamp = Math.floor(Date.now() / 1000);
+
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("10"), SILVER);
+        let stake = await tokenStaking.stakes(user1.address, 0);
+        expect(stake._amount.toString()).to.equal(
+          ethers.utils.parseEther("10").toString()
+        );
+        expect(new Date(parseInt(stake._timestamp))).to.afterOrEqualDate(
+          new Date(timestamp)
+        );
+        expect(stake._packageName).to.equal(SILVER);
+        expect(stake._withdrawnTimestamp.toString()).to.equal("0");
+
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("20"), PLATINUM);
+        stake = await tokenStaking.stakes(user1.address, 1);
+        expect(stake._amount.toString()).to.equal(
+          ethers.utils.parseEther("20").toString()
+        );
+        expect(new Date(parseInt(stake._timestamp))).to.afterOrEqualDate(
+          new Date(timestamp)
+        );
+        expect(stake._packageName).to.equal(PLATINUM);
+        expect(stake._withdrawnTimestamp.toString()).to.equal("0");
+      });
+
+      it("should update hasStaked", async () => {
+        expect(await tokenStaking.hasStaked(user1.address)).to.equal(false);
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("10"), SILVER);
+        expect(await tokenStaking.hasStaked(user1.address)).to.equal(true);
+      });
+
+      it("should transfer token", async () => {
+        expect(
+          (await token.balanceOf(tokenStaking.address)).toString()
+        ).to.equal("0");
+        expect((await token.balanceOf(user1.address)).toString()).to.equal(
+          ethers.utils.parseEther("2000000").toString()
+        );
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("100"), SILVER);
+
+        expect(
+          (await token.balanceOf(tokenStaking.address)).toString()
+        ).to.equal(ethers.utils.parseEther("100").toString());
+        expect((await token.balanceOf(user1.address)).toString()).to.equal(
+          ethers.utils.parseEther("1999900").toString()
+        );
+      });
+
+      it("should catch StakeAdded event", async () => {
+        await expect(
+          tokenStaking
+            .connect(user1)
+            .stakeTokens(ethers.utils.parseEther("100"), SILVER)
+        )
+          .to.emit(tokenStaking, "StakeAdded")
+          .withArgs(user1.address, SILVER, ethers.utils.parseEther("100"), "0");
       });
     });
   });
