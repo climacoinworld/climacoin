@@ -831,4 +831,142 @@ describe("TokenStaking (proxy)", function () {
         .withArgs(user1.address, "0");
     });
   });
+
+  describe("pauseStaking", () => {
+    beforeEach(async () => {
+      await token
+        .connect(user1)
+        .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+    });
+
+    it("can call only owner", async () => {
+      await expectRevert(
+        tokenStaking.connect(user1).pauseStaking(),
+        "The caller does not have the DEFAULT_ADMIN_ROLE role."
+      );
+
+      await tokenStaking.pauseStaking();
+    });
+
+    it("should pause staking", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("80"), GOLD);
+      await tokenStaking.pauseStaking();
+
+      await expectRevert(
+        tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("80"), GOLD),
+        "The staking is paused."
+      );
+    });
+
+    it("should cath Paused event", async () => {
+      await expect(tokenStaking.pauseStaking())
+        .to.emit(tokenStaking, "Paused")
+        .withArgs();
+    });
+  });
+
+  describe("unpauseStaking", () => {
+    beforeEach(async () => {
+      await token
+        .connect(user1)
+        .approve(tokenStaking.address, ethers.utils.parseEther("200"));
+    });
+
+    it("can call only owner", async () => {
+      await expectRevert(
+        tokenStaking.connect(user1).unpauseStaking(),
+        "The caller does not have the DEFAULT_ADMIN_ROLE role."
+      );
+
+      await tokenStaking.unpauseStaking();
+    });
+
+    it("should unpause staking", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("80"), GOLD);
+      await tokenStaking.pauseStaking();
+
+      await expectRevert(
+        tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("80"), GOLD),
+        "The staking is paused."
+      );
+
+      await tokenStaking.unpauseStaking();
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("30"), PLATINUM);
+    });
+
+    it("should cath Unpaused event", async () => {
+      await expect(tokenStaking.unpauseStaking())
+        .to.emit(tokenStaking, "Unpaused")
+        .withArgs();
+    });
+  });
+
+  describe("addStakedTokenReward", () => {
+    beforeEach(async () => {
+      await token.approve(tokenStaking.address, ethers.utils.parseEther("200"));
+    });
+
+    it("only Reward provider can call", async () => {
+      await expectRevert(
+        tokenStaking
+          .connect(user2)
+          .addStakedTokenReward(ethers.utils.parseEther("20")),
+        "The caller does not have the REWARD_PROVIDER_ROLE role."
+      );
+
+      await tokenStaking.addStakedTokenReward(ethers.utils.parseEther("20"));
+    });
+
+    it("should catch NativeTokenRewardAdded event", async () => {
+      await expect(
+        tokenStaking.addStakedTokenReward(ethers.utils.parseEther("20"))
+      )
+        .to.emit(tokenStaking, "NativeTokenRewardAdded")
+        .withArgs(owner.address, ethers.utils.parseEther("20"));
+    });
+  });
+
+  describe("removeStakedTokenReward", () => {
+    beforeEach(async () => {
+      await token.approve(tokenStaking.address, ethers.utils.parseEther("200"));
+      await tokenStaking.addStakedTokenReward(ethers.utils.parseEther("20"));
+    });
+
+    it("only Reward provider can call", async () => {
+      await expectRevert(
+        tokenStaking
+          .connect(user2)
+          .removeStakedTokenReward(ethers.utils.parseEther("10")),
+        "The caller does not have the REWARD_PROVIDER_ROLE role."
+      );
+
+      await tokenStaking.removeStakedTokenReward(ethers.utils.parseEther("10"));
+    });
+
+    it("should revert if reward pool > removing amount", async () => {
+      await expectRevert(
+        tokenStaking.removeStakedTokenReward(ethers.utils.parseEther("25")),
+        "You cannot withdraw this amount."
+      );
+      await tokenStaking.removeStakedTokenReward(ethers.utils.parseEther("20"));
+    });
+
+    it("should catch NativeTokenRewardRemoved event", async () => {
+      await expect(
+        tokenStaking.removeStakedTokenReward(ethers.utils.parseEther("15"))
+      )
+        .to.emit(tokenStaking, "NativeTokenRewardRemoved")
+        .withArgs(owner.address, ethers.utils.parseEther("15"));
+    });
+  });
 });
