@@ -6,7 +6,7 @@ const { solidity } = require("ethereum-waffle");
 use(solidity);
 use(require("chai-datetime"));
 
-const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
+const { expectRevert, time } = require("@openzeppelin/test-helpers");
 
 const REWARD_PROVIDER_ROLE = web3.utils.keccak256("REWARD_PROVIDER_ROLE");
 const DEFAULT_ADMIN_ROLE =
@@ -415,6 +415,236 @@ describe("TokenStaking (proxy)", function () {
       expect(
         (await tokenStaking.checkStakeReward(user1.address, 0)).timeDiff
       ).to.equal("61");
+    });
+  });
+
+  describe("unstakeTokens", () => {
+    beforeEach(async () => {
+      await token
+        .connect(user1)
+        .approve(tokenStaking.address, ethers.utils.parseEther("20000"));
+      await token
+        .connect(user2)
+        .approve(tokenStaking.address, ethers.utils.parseEther("20000"));
+
+      await token.approve(
+        tokenStaking.address,
+        ethers.utils.parseEther("2000000")
+      );
+      await tokenStaking.addStakedTokenReward(ethers.utils.parseEther("100"));
+    });
+
+    it("should revert if stake not defined", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+
+      await expectRevert(
+        tokenStaking.connect(user1).unstakeTokens(1),
+        "The stake you are searching for is not defined"
+      );
+
+      await time.increase(time.duration.days(45));
+
+      await tokenStaking.connect(user1).unstakeTokens(0);
+    });
+
+    it("should revert if stake already withdrawn ", async () => {
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(45));
+
+      await tokenStaking.connect(user1).unstakeTokens(0);
+
+      await expectRevert(
+        tokenStaking.connect(user1).unstakeTokens(0),
+        "The stake is already withdrawn."
+      );
+    });
+
+    it("should decrease total balance", async () => {
+      expect(await tokenStaking.totalStakedFunds()).to.equal("0");
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(100));
+
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("160")
+      );
+      await tokenStaking.connect(user1).unstakeTokens(0);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("110")
+      );
+
+      await tokenStaking.connect(user1).unstakeTokens(1);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("50")
+      );
+
+      await tokenStaking.connect(user1).unstakeTokens(2);
+      expect(await tokenStaking.totalStakedFunds()).to.equal(
+        ethers.utils.parseEther("0")
+      );
+    });
+
+    it("should decrease user total staked balance", async () => {
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        "0"
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      await time.increase(time.duration.days(100));
+
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("160")
+      );
+
+      await tokenStaking.connect(user1).unstakeTokens(0);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("110")
+      );
+
+      await tokenStaking.connect(user1).unstakeTokens(1);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("50")
+      );
+
+      await tokenStaking.connect(user1).unstakeTokens(2);
+      expect(await tokenStaking.totalStakedBalance(user1.address)).to.equal(
+        ethers.utils.parseEther("0")
+      );
+    });
+
+    it("should close the staking package(set _withdrawnTimestamp)", async () => {
+      let stake;
+      let timestamp = new Date(Math.floor(Date.now() / 1000));
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      stake = await tokenStaking.stakes(user1.address, 0);
+      await time.increase(time.duration.days(31));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).unstakeTokens(0);
+      stake = await tokenStaking.stakes(user1.address, 0);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+
+      await tokenStaking
+        .connect(user2)
+        .stakeTokens(ethers.utils.parseEther("30"), GOLD);
+      stake = await tokenStaking.stakes(user2.address, 0);
+      await time.increase(time.duration.days(61));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user2).unstakeTokens(0);
+      stake = await tokenStaking.stakes(user2.address, 0);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("60"), PLATINUM);
+      stake = await tokenStaking.stakes(user1.address, 1);
+      await time.increase(time.duration.days(100));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).unstakeTokens(1);
+      stake = await tokenStaking.stakes(user1.address, 1);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+
+      await tokenStaking
+        .connect(user1)
+        .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+      stake = await tokenStaking.stakes(user1.address, 2);
+      await time.increase(time.duration.days(31));
+      expect(stake._withdrawnTimestamp).to.equal("0");
+      await tokenStaking.connect(user1).unstakeTokens(2);
+      stake = await tokenStaking.stakes(user1.address, 2);
+      expect(new Date(parseInt(stake._withdrawnTimestamp))).to.afterOrEqualDate(
+        timestamp
+      );
+    });
+
+    describe("reward in ClimaCoin token", () => {
+      it("should revert if not enough liquidity", async () => {
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("5000"), SILVER);
+        await time.increase(time.duration.days(31));
+
+        await expectRevert(
+          tokenStaking.connect(user1).unstakeTokens(0),
+          "Token creators did not place enough liquidity in the contract for your reward to be paid"
+        );
+      });
+
+      it("should revert if try to unstake sooner than the blocked time", async () => {
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("50"), SILVER);
+        await time.increase(time.duration.days(6));
+
+        await expectRevert(
+          tokenStaking.connect(user1).unstakeTokens(0),
+          "Cannot unstake sooner than the blocked time."
+        );
+
+        await time.increase(time.duration.days(10));
+        await tokenStaking.connect(user1).unstakeTokens(0);
+      });
+
+      it("should decrease reward pool", async () => {
+        // reward pool 100, lets decrease on 80
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("1000"), SILVER);
+        await time.increase(time.duration.days(31));
+        await tokenStaking.connect(user1).unstakeTokens(0);
+        // now reward pool should be 20, lets try to get 40 tokens as reward, should fail
+
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("500"), SILVER);
+        await time.increase(time.duration.days(31));
+        await expectRevert(
+          tokenStaking.connect(user1).unstakeTokens(1),
+          "Token creators did not place enough liquidity in the contract for your reward to be paid"
+        );
+      });
+
+      it("should catch Unstaked event", async () => {
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("100"), SILVER);
+        await tokenStaking
+          .connect(user1)
+          .stakeTokens(ethers.utils.parseEther("200"), SILVER);
+
+        await time.increase(time.duration.days(31));
+
+        await expect(tokenStaking.connect(user1).unstakeTokens(1))
+          .to.emit(tokenStaking, "Unstaked")
+          .withArgs(user1.address, "1");
+      });
     });
   });
 });
