@@ -4,6 +4,7 @@
 
 Smart contracts included in this repo:
 - `ClimaCoinToken.sol` - The ClimaCoin token which can be deployed on both Ethereum Blockchain (ERC-20) and Binance Smart Chain (BEP-20). 
+- `TokenStaking.sol` - A token holder contract that allows users to stake an ERC20 token and receive rewards in the native token. Can be used for staking.
 - `TokenVesting.sol` - A token holder contract that can release its tokens gradually like a typical vesting scheme. Can be used for distribution.
   
 All the contracts in this repository are **upgradeable**, meaning that they can be benefit from improvements in the future. Read more about it here: [Writing Upgradeable Contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable).
@@ -24,9 +25,21 @@ For UNIT tests, run:
 
 ### Deployment
 
+#### ClimaCoinToken.sol
+
 To deploy the token contract, run:  
 `npx hardhat run scripts/deploy_token.js --network [NETWORK]`  
-  
+
+#### TokenStaking.sol
+
+Before running the deployment script for staking, you need to set up some environment variables. Replace the parameters inside `./scripts/token_staking_params.json` with your own parameters:  
+- `token`: Address of the token. This token will be received by the beneficiary.
+
+To deploy the staking contract, run:  
+`npx hardhat run scripts/deploy_staking.js --network [NETWORK]`  
+
+#### TokenVesting.sol
+
 Before running the deployment script for vesting, you need to set up some environment variables. Replace the parameters inside `./scripts/token_vesting_params.json` with your own parameters:  
 - `token`: Address of the token. This token will be received by the beneficiary.
 - `beneficiary`: Address of the beneficiary, which receives vested tokens.
