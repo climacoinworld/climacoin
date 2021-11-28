@@ -57,6 +57,8 @@ To deploy the vesting contract, run:
 
 #### TokenStaking.sol
 
+After deploying it, the staking contract should receive tokens via `addStakedTokenReward(amount)` for future staking logic. The contract owner is the only one who can call this method to add native tokens to the reward pool.
+
 *Staking Packages:*  
 
 Staking packages are predefined inside the constructor. The staking packages have the following components:
