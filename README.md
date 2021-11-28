@@ -87,9 +87,14 @@ If the user stakes $100 worth of TOKEN in the GOLD package, the user will receiv
 
 *Available methods that can be called:*
 
-1) `getAvailableTokens()`: Get the number of tokens that can be claimed by the beneficiary at that specific moment in time. Can be called by anyone.
-2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only be the beneficiary.
-3) `revoke()`: Cancels the vesting. Tokens that are not vested will return to the owner. Tokens that are vested, but not claimed, remain in the contract until the next `release`. Can be called only be the owner of the vesting contract.
+1) `stakeTokens(amount, packageName)`: Stakes an amount of funds in a package. Can be called by anyone, usually called by the user.
+2) `unstakeTokens(stakeIndex)`: Unstakes and retrieves the initial funds + the reward. If the reward is insufficient, the funds are blocked and the users cannot withdraw them. Can be called only by the same user who did the stake.
+3) `forceWithdraw(stakeIndex)`: Same as `unstakeTokens`, but if the reward is insufficient, the users can still force withdraw their initial funds, without getting the reward.
+4) `addStakedTokenReward(amount)`: Adds native token reward to the contract. Can be called only be the owner of the staking contract.
+5) `removeStakedTokenReward(amount)`: Removes native token reward from the contract. Can be called only be the owner of the staking contract.
+6) `checkStakeReward(address, stakeIndex)`: Returns the amount of native token that was accumulated for a stake. Can be called by anyone.
+7) `pauseStaking()`: Pause the staking so users can no longer stake their funds. Can be called only be the owner of the staking contract.
+8) `unpauseStaking()`: Unpause the staking so users can stake their funds. Can be called only be the owner of the staking contract.
 
 #### TokenVesting.sol
 
