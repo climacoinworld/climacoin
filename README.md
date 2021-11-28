@@ -71,6 +71,20 @@ There are 3 staking packages, each with their own characteristics:
 - gold: in 60 days you receive 18% of the staked tokens. The tokens are blocked for 30 days.
 - platinum: in 90 days you receive 30% of the staked tokens. The tokens are blocked for 45 days.
 
+*Staking Mechanism:*  
+
+When choosing to stake tokens and receive the reward in the native token, users accumulate rewards which compound. The unstake function will calculate the compounded interest and return the whole amount (stake + compounded reward) to the user.
+
+*Examples:*  
+
+Given the following package:
+- name: GOLD
+- days: 60
+- daysBlocked: 30
+- compound interest: 18
+
+If the user stakes $100 worth of TOKEN in the GOLD package, the user will receive 18% of the staked amount each 60 days. This staked amount compounds, such that after 120 days, the user receives $139.24 worth of TOKEN instead of just $136 worth of TOKEN. Note that the staked amount will be blocked for the first 30 days.
+
 *Available methods that can be called:*
 
 1) `getAvailableTokens()`: Get the number of tokens that can be claimed by the beneficiary at that specific moment in time. Can be called by anyone.
