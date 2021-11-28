@@ -33,7 +33,7 @@ To deploy the token contract, run:
 #### TokenStaking.sol
 
 Before running the deployment script for staking, you need to set up some environment variables. Replace the parameters inside `./scripts/token_staking_params.json` with your own parameters:  
-- `token`: Address of the token. This token will be received by the beneficiary.
+- `token`: Address of the native token. The users can stake any amount of this token to increase their total balance.
 
 To deploy the staking contract, run:  
 `npx hardhat run scripts/deploy_staking.js --network [NETWORK]`  
@@ -51,7 +51,7 @@ Before running the deployment script for vesting, you need to set up some enviro
 To deploy the vesting contract, run:  
 `npx hardhat run scripts/deploy_vesting.js --network [NETWORK]`  
 
-Available networks can be found in `hardhat.config.js`.
+*Available networks can be found in `hardhat.config.js`.*
 
 ### How it works
 
