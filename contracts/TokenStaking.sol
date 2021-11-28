@@ -79,9 +79,9 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(REWARD_PROVIDER_ROLE, _msgSender());
 
-        _definePackage("silver", 30, 15, 8); // in 30 days you receive 8% of the staked tokens. The tokens are blocked for 3 days.
-        _definePackage("gold", 60, 30, 18); // in 60 days you receive 18% of the staked tokens. The tokens are blocked for 10 days.
-        _definePackage("platinum", 90, 45, 30); // in 90 days you receive 30% of the staked tokens. The tokens are blocked for 20 days.
+        _definePackage("silver", 30, 15, 8); // in 30 days you receive 8% of the staked tokens. The tokens are blocked for 15 days.
+        _definePackage("gold", 60, 30, 18); // in 60 days you receive 18% of the staked tokens. The tokens are blocked for 30 days.
+        _definePackage("platinum", 90, 45, 30); // in 90 days you receive 30% of the staked tokens. The tokens are blocked for 45 days.
     }
 
     function checkStakeReward(address _address, uint256 stakeIndex)

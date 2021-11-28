@@ -57,7 +57,19 @@ To deploy the vesting contract, run:
 
 #### TokenStaking.sol
 
-After deploying it, the **vesting contract** should receive tokens for future vesting logic. The owner can simply transfer the required amount of tokens to the contract address. When the time will be reached, release tokens will be available for claiming. There will be multiple releases with the same delay between them.  
+*Staking Packages:*  
+
+Staking packages are predefined inside the constructor. The staking packages have the following components:
+
+- name: represents the name of the package
+- days: the number of days that need to pass to get the reward
+- daysBlocked: the number of days after staking in which users cannot withdraw their tokens
+- compound interest: the reward measured in % (i.e. 5%)
+
+There are 3 staking packages, each with their own characteristics:
+- silver: in 30 days you receive 8% of the staked tokens. The tokens are blocked for 15 days.
+- gold: in 60 days you receive 18% of the staked tokens. The tokens are blocked for 30 days.
+- platinum: in 90 days you receive 30% of the staked tokens. The tokens are blocked for 45 days.
 
 *Available methods that can be called:*
 
