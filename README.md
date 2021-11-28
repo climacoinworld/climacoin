@@ -55,9 +55,21 @@ To deploy the vesting contract, run:
 
 ### How it works
 
-After deploying it, the **vesting contract** should receive tokens for future vesting logic. The owner can simply transfer the required amount of tokens to the contract address. When the time will be reached, release tokens will be available for claiming. There will be multiple releases with the same delay between them. 
+#### TokenStaking.sol
 
-### Available methods that can be called:
+After deploying it, the **vesting contract** should receive tokens for future vesting logic. The owner can simply transfer the required amount of tokens to the contract address. When the time will be reached, release tokens will be available for claiming. There will be multiple releases with the same delay between them.  
+
+*Available methods that can be called:*
+
+1) `getAvailableTokens()`: Get the number of tokens that can be claimed by the beneficiary at that specific moment in time. Can be called by anyone.
+2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only be the beneficiary.
+3) `revoke()`: Cancels the vesting. Tokens that are not vested will return to the owner. Tokens that are vested, but not claimed, remain in the contract until the next `release`. Can be called only be the owner of the vesting contract.
+
+#### TokenVesting.sol
+
+After deploying it, the **vesting contract** should receive tokens for future vesting logic. The owner can simply transfer the required amount of tokens to the contract address. When the time will be reached, release tokens will be available for claiming. There will be multiple releases with the same delay between them.  
+
+*Available methods that can be called:*
 
 1) `getAvailableTokens()`: Get the number of tokens that can be claimed by the beneficiary at that specific moment in time. Can be called by anyone.
 2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only be the beneficiary.
