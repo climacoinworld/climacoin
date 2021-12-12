@@ -30,6 +30,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
 
     IERC20Upgradeable public tokenContract;
 
+    bytes32[] public packageNames;
     mapping(bytes32 => YieldType) public packages;
     mapping(address => uint256) public totalStakedBalance;
     mapping(address => Stake[]) public stakes;
@@ -114,6 +115,14 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
             yieldReward = yieldReward.add(currentReward);
             yieldPeriods--;
         }
+    }
+
+    function stakesLength(address _address) external view returns (uint256) {
+        return stakes[_address].length;
+    }
+
+    function packageLength() external view returns (uint256) {
+        return packageNames.length;
     }
 
     function stakeTokens(uint256 _amount, bytes32 _packageName) public {
@@ -303,5 +312,6 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         package._packageInterest = _packageInterest;
         package._daysBlocked = _daysBlocked;
         packages[_name] = package;
+        packageNames.push(_name);
     }
 }
