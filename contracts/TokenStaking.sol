@@ -195,7 +195,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         );
 
         require(
-            rewardProviderTokenAllowance > reward,
+            rewardProviderTokenAllowance >= reward,
             "Token creators did not place enough liquidity in the contract for your reward to be paid."
         );
 
