@@ -12,10 +12,10 @@ All the contracts in this repository are **upgradeable**, meaning that they can 
 ## Installation
 
 Clone this repository:  
-`git clone https://github.com/ctindogaru/climacoin`
+`git clone https://github.com/climacoinworld/climacoin-smart-contracts`
 
 Install dependencies:  
-`cd climacoin && npm install`
+`cd climacoin-smart-contracts && npm install`
 
 ## Tests
 

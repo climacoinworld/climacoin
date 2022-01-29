@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ctindogaru/climacoin.git"
+    "url": "git+https://github.com/climacoinworld/climacoin-smart-contracts.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ctindogaru/climacoin/issues"
+    "url": "https://github.com/climacoinworld/climacoin-smart-contracts/issues"
   },
-  "homepage": "https://github.com/ctindogaru/climacoin#readme",
+  "homepage": "https://github.com/climacoinworld/climacoin-smart-contracts#readme",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",

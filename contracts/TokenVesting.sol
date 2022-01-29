@@ -38,7 +38,7 @@ contract TokenVesting is Initializable {
 
     /**
      * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
-     * beneficiary, gradually in a linear fashion until start + duration. By then all
+     * beneficiary, gradually in a linear fashion until start + duration * releasesCount. By then all
      * of the balance will have vested.
      * @param token address of the token which should be vested
      * @param beneficiary address of the beneficiary to whom vested tokens are transferred
