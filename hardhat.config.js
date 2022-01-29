@@ -6,6 +6,7 @@ const {
 } = require("./secrets.json");
 
 require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
 require("@openzeppelin/hardhat-upgrades");
 
