@@ -4,7 +4,7 @@ const { expect } = require("chai");
 const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 
 // Start test block
-describe.only("TokenVesting", function () {
+describe("TokenVesting", function () {
   beforeEach(async function () {
     [owner, beneficiary, _] = await ethers.getSigners();
 
