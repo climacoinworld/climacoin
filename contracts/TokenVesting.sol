@@ -15,22 +15,26 @@ contract TokenVesting {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event TokensReleased(uint256 amount);
+    event TokensReleased(uint256 amount, address beneficiary);
+    event NewBeneficiaryAdded(address beneficiary);
 
-    // owner of this contract
-    address private _owner;
-    // beneficiary of tokens after they are released
-    address private _beneficiary;
+    // Everything is expressed in seconds, the same units as block.timestamp.
+    struct VestingDetails {
+        uint256 _start;
+        uint256 _finish;
+        uint256 _cliff;
+        uint256 _releasesCount;
+        uint256 _duration;
+        uint256 _tokensAllocated;
+        uint256 _tokensReleased;
+    }
 
-    // Durations and timestamps are expressed in UNIX time, the same units as block.timestamp.
-    uint256 private _start;
-    uint256 private _cliff;
-    uint256 private _finish;
-    uint256 private _duration;
-    uint256 private _releasesCount;
-    uint256 private _released;
+    mapping(address => VestingDetails) private _beneficiaryDetails;
+    address[] private _beneficiaryNames;
 
     IERC20 private _token;
+    // owner of this contract
+    address private _owner;
 
     /**
      * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
@@ -39,37 +43,40 @@ contract TokenVesting {
      * @param __token address of the token which should be vested
      * @param __beneficiary address of the beneficiary to whom vested tokens are transferred
      * @param __cliff the duration in seconds from the current time at which point vesting starts
-     * @param __duration duration in seconds of each release
      * @param __releasesCount total amount of upcoming releases
+     * @param __duration duration in seconds of each release
+     * @param __tokensAllocated token allocated to this beneficiary
      */
     constructor(
         address __token,
-        address __beneficiary,
-        uint256 __cliff,
-        uint256 __duration,
-        uint256 __releasesCount
+        address[] memory __beneficiary,
+        uint256[] memory __cliff,
+        uint256[] memory __releasesCount,
+        uint256[] memory __duration,
+        uint256[] memory __tokensAllocated
     ) {
         require(
             __token != address(0),
             "TokenVesting: token is the zero address!"
         );
-        require(
-            __beneficiary != address(0),
-            "TokenVesting: beneficiary is the zero address!"
-        );
-        require(__cliff > 0, "TokenVesting: cliff is 0!");
-        require(__duration > 0, "TokenVesting: duration is 0!");
-        require(__releasesCount > 0, "TokenVesting: releases count is 0!");
 
         _token = IERC20(__token);
-        _beneficiary = __beneficiary;
-        _duration = __duration;
-        _releasesCount = __releasesCount;
-        _cliff = __cliff;
-        _start = block.timestamp.add(__cliff);
-        _finish = _start.add(_releasesCount.mul(_duration));
-
         _owner = msg.sender;
+
+        for (uint256 i = 0; i < __beneficiary.length; i++) {
+            VestingDetails memory details;
+            details._start = block.timestamp.add(__cliff[i]);
+            details._finish = details._start.add(
+                __releasesCount[i].mul(__duration[i])
+            );
+            details._cliff = __cliff[i];
+            details._releasesCount = __releasesCount[i];
+            details._duration = __duration[i];
+            details._tokensAllocated = __tokensAllocated[i];
+            details._tokensReleased = 0;
+            _beneficiaryDetails[__beneficiary[i]] = details;
+            _beneficiaryNames.push(__beneficiary[i]);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -79,50 +86,57 @@ contract TokenVesting {
     /**
      * @return the beneficiary of the tokens.
      */
-    function beneficiary() public view returns (address) {
-        return _beneficiary;
+    function beneficiaries() public view returns (address[] memory) {
+        return _beneficiaryNames;
     }
 
     /**
      * @return the start time of the token vesting.
      */
     function start() public view returns (uint256) {
-        return _start;
-    }
-
-    /**
-     * @return the cliff of the token vesting.
-     */
-    function cliff() public view returns (uint256) {
-        return _cliff;
+        return _beneficiaryDetails[msg.sender]._start;
     }
 
     /**
      * @return the finish time of the token vesting.
      */
     function finish() public view returns (uint256) {
-        return _finish;
+        return _beneficiaryDetails[msg.sender]._finish;
     }
 
     /**
-     * @return the duration of the token vesting.
+     * @return the cliff of the token vesting.
      */
-    function duration() public view returns (uint256) {
-        return _duration;
-    }
-
-    /**
-     * @return the amount of the token released.
-     */
-    function released() public view returns (uint256) {
-        return _released;
+    function cliff() public view returns (uint256) {
+        return _beneficiaryDetails[msg.sender]._cliff;
     }
 
     /**
      * @return the number of token releases.
      */
     function releasesCount() public view returns (uint256) {
-        return _releasesCount;
+        return _beneficiaryDetails[msg.sender]._releasesCount;
+    }
+
+    /**
+     * @return the duration of the token vesting.
+     */
+    function duration() public view returns (uint256) {
+        return _beneficiaryDetails[msg.sender]._duration;
+    }
+
+    /**
+     * @return the number of tokens allocated.
+     */
+    function tokensAllocated() public view returns (uint256) {
+        return _beneficiaryDetails[msg.sender]._tokensAllocated;
+    }
+
+    /**
+     * @return the amount of the tokens released.
+     */
+    function tokensReleased() public view returns (uint256) {
+        return _beneficiaryDetails[msg.sender]._tokensReleased;
     }
 
     /**
@@ -133,7 +147,11 @@ contract TokenVesting {
     }
 
     function getAvailableTokens() public view returns (uint256) {
-        return _releasableAmount();
+        require(
+            _beneficiaryDetails[msg.sender]._tokensAllocated > 0,
+            "sender is not a beneficiary!"
+        );
+        return _releasableAmount(msg.sender);
     }
 
     // -----------------------------------------------------------------------
@@ -141,18 +159,53 @@ contract TokenVesting {
     // -----------------------------------------------------------------------
 
     /**
+     * @notice Add a new beneficiary to the vesting scheme.
+     */
+    function addBeneficiary(
+        address __beneficiary,
+        uint256 __cliff,
+        uint256 __releasesCount,
+        uint256 __duration,
+        uint256 __tokensAllocated
+    ) public {
+        require(msg.sender == _owner, "only owner can add new beneficiary!");
+        require(
+            _beneficiaryDetails[__beneficiary]._tokensAllocated == 0,
+            "beneficiary already exists!"
+        );
+
+        VestingDetails memory details;
+        details._start = block.timestamp.add(__cliff);
+        details._finish = details._start.add(__releasesCount.mul(__duration));
+        details._cliff = __cliff;
+        details._releasesCount = __releasesCount;
+        details._duration = __duration;
+        details._tokensAllocated = __tokensAllocated;
+        details._tokensReleased = 0;
+        _beneficiaryDetails[__beneficiary] = details;
+        _beneficiaryNames.push(__beneficiary);
+
+        emit NewBeneficiaryAdded(__beneficiary);
+    }
+
+    /**
      * @notice Transfers vested tokens to beneficiary.
      */
     function release() public {
-        require(msg.sender == _beneficiary, "release: unauthorized sender!");
+        require(
+            _beneficiaryDetails[msg.sender]._tokensAllocated > 0,
+            "release: unauthorized sender!"
+        );
 
-        uint256 unreleased = _releasableAmount();
+        uint256 unreleased = _releasableAmount(msg.sender);
         require(unreleased > 0, "release: No tokens are due!");
 
-        _released = _released.add(unreleased);
-        _token.safeTransfer(_beneficiary, unreleased);
+        _beneficiaryDetails[msg.sender]._tokensReleased = _beneficiaryDetails[
+            msg.sender
+        ]._tokensReleased.add(unreleased);
+        _token.safeTransfer(msg.sender, unreleased);
 
-        emit TokensReleased(unreleased);
+        emit TokensReleased(unreleased, msg.sender);
     }
 
     // -----------------------------------------------------------------------
@@ -162,25 +215,44 @@ contract TokenVesting {
     /**
      * @dev Calculates the amount that has already vested but hasn't been released yet.
      */
-    function _releasableAmount() private view returns (uint256) {
-        return _vestedAmount().sub(_released);
+    function _releasableAmount(address __beneficiary)
+        private
+        view
+        returns (uint256)
+    {
+        return
+            _vestedAmount(__beneficiary).sub(
+                _beneficiaryDetails[__beneficiary]._tokensReleased
+            );
     }
 
     /**
      * @dev Calculates the amount that has already vested.
      */
-    function _vestedAmount() private view returns (uint256) {
-        uint256 currentBalance = _token.balanceOf(address(this));
-        uint256 totalBalance = currentBalance.add(_released);
+    function _vestedAmount(address __beneficiary)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 totalBalance = _beneficiaryDetails[__beneficiary]
+            ._tokensAllocated;
 
-        if (block.timestamp < _start) {
+        if (block.timestamp < _beneficiaryDetails[__beneficiary]._start) {
             return 0;
-        } else if (block.timestamp >= _finish) {
+        } else if (
+            block.timestamp >= _beneficiaryDetails[__beneficiary]._finish
+        ) {
             return totalBalance;
         } else {
-            uint256 timeLeftAfterStart = block.timestamp.sub(_start);
-            uint256 availableReleases = timeLeftAfterStart.div(_duration);
-            uint256 tokensPerRelease = totalBalance.div(_releasesCount);
+            uint256 timeLeftAfterStart = block.timestamp.sub(
+                _beneficiaryDetails[__beneficiary]._start
+            );
+            uint256 availableReleases = timeLeftAfterStart.div(
+                _beneficiaryDetails[__beneficiary]._duration
+            );
+            uint256 tokensPerRelease = totalBalance.div(
+                _beneficiaryDetails[__beneficiary]._releasesCount
+            );
 
             return availableReleases.mul(tokensPerRelease);
         }

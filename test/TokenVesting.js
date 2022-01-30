@@ -4,7 +4,7 @@ const { expect } = require("chai");
 const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 
 // Start test block
-describe("TokenVesting", function () {
+describe.only("TokenVesting", function () {
   beforeEach(async function () {
     [owner, beneficiary, _] = await ethers.getSigners();
 
@@ -18,10 +18,11 @@ describe("TokenVesting", function () {
     this.duration = time.duration.weeks("10");
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
-      beneficiary.address,
-      this.cliff.toString(),
-      this.duration.toString(),
-      this.releasesCount.toString()
+      [beneficiary.address],
+      [this.cliff.toString()],
+      [this.releasesCount.toString()],
+      [this.duration.toString()],
+      [ethers.utils.parseEther("100").toString()]
     );
     await this.tokenVesting.deployed();
 
@@ -33,27 +34,33 @@ describe("TokenVesting", function () {
 
   // Test case
   it("test getters", async function () {
-    let vestingBeneficiary = await this.tokenVesting.beneficiary();
-    expect(vestingBeneficiary).to.equal(beneficiary.address);
+    let vestingBeneficiary = await this.tokenVesting.beneficiaries();
+    expect(vestingBeneficiary[0]).to.equal(beneficiary.address);
 
-    let vestingStart = await this.tokenVesting.start();
-    let vestingFinish = await this.tokenVesting.finish();
+    let vestingStart = await this.tokenVesting.connect(beneficiary).start();
+    let vestingFinish = await this.tokenVesting.connect(beneficiary).finish();
     expect(vestingFinish.toString()).to.equal(
       new BN(vestingStart.toNumber())
         .add(this.duration.mul(new BN(this.releasesCount)))
         .toString()
     );
 
-    let vestingCliff = await this.tokenVesting.cliff();
+    let vestingCliff = await this.tokenVesting.connect(beneficiary).cliff();
     expect(vestingCliff.toString()).to.equal(this.cliff.toString());
 
-    let vestingDuration = await this.tokenVesting.duration();
+    let vestingDuration = await this.tokenVesting
+      .connect(beneficiary)
+      .duration();
     expect(vestingDuration.toString()).to.equal(this.duration.toString());
 
-    let vestingReleased = await this.tokenVesting.released();
+    let vestingReleased = await this.tokenVesting
+      .connect(beneficiary)
+      .tokensReleased();
     expect(vestingReleased.toString()).to.equal("0");
 
-    let vestingReleasesCount = await this.tokenVesting.releasesCount();
+    let vestingReleasesCount = await this.tokenVesting
+      .connect(beneficiary)
+      .releasesCount();
     expect(vestingReleasesCount.toString()).to.equal(
       this.releasesCount.toString()
     );
@@ -61,18 +68,24 @@ describe("TokenVesting", function () {
     let vestingOwner = await this.tokenVesting.owner();
     expect(vestingOwner).to.equal(owner.address);
 
-    let vestingAvailableTokens = await this.tokenVesting.getAvailableTokens();
+    let vestingAvailableTokens = await this.tokenVesting
+      .connect(beneficiary)
+      .getAvailableTokens();
     expect(vestingAvailableTokens.toString()).to.equal("0");
   });
 
   // Test case
   it("test release", async function () {
-    let vestingReleased = await this.tokenVesting.released();
+    let vestingReleased = await this.tokenVesting
+      .connect(beneficiary)
+      .tokensReleased();
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("0").toString()
     );
 
-    let availableTokens = await this.tokenVesting.getAvailableTokens();
+    let availableTokens = await this.tokenVesting
+      .connect(beneficiary)
+      .getAvailableTokens();
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("0").toString()
     );
@@ -100,14 +113,18 @@ describe("TokenVesting", function () {
     await time.increase(parseInt(time.duration.weeks("10")));
     await time.increase(parseInt(time.duration.minutes("10")));
 
-    availableTokens = await this.tokenVesting.getAvailableTokens();
+    availableTokens = await this.tokenVesting
+      .connect(beneficiary)
+      .getAvailableTokens();
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("25").toString()
     );
 
     await this.tokenVesting.connect(beneficiary).release();
 
-    vestingReleased = await this.tokenVesting.released();
+    vestingReleased = await this.tokenVesting
+      .connect(beneficiary)
+      .tokensReleased();
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("25").toString()
     );
@@ -124,14 +141,18 @@ describe("TokenVesting", function () {
 
     await time.increase(parseInt(time.duration.weeks("30")));
 
-    availableTokens = await this.tokenVesting.getAvailableTokens();
+    availableTokens = await this.tokenVesting
+      .connect(beneficiary)
+      .getAvailableTokens();
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("75").toString()
     );
 
     await this.tokenVesting.connect(beneficiary).release();
 
-    vestingReleased = await this.tokenVesting.released();
+    vestingReleased = await this.tokenVesting
+      .connect(beneficiary)
+      .tokensReleased();
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("100").toString()
     );
@@ -178,12 +199,12 @@ describe("TokenVesting", function () {
 
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("150").toString()
+      ethers.utils.parseEther("75").toString()
     );
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("50").toString()
+      ethers.utils.parseEther("125").toString()
     );
   });
 
@@ -256,10 +277,11 @@ describe("TokenVesting - odd token divison", function () {
     this.duration = time.duration.weeks("10");
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
-      beneficiary.address,
-      this.cliff.toString(),
-      this.duration.toString(),
-      this.releasesCount.toString()
+      [beneficiary.address],
+      [this.cliff.toString()],
+      [this.releasesCount.toString()],
+      [this.duration.toString()],
+      [ethers.utils.parseEther("100").toString()]
     );
     await this.tokenVesting.deployed();
 
