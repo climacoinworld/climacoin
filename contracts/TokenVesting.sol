@@ -25,6 +25,7 @@ contract TokenVesting {
 
     // Durations and timestamps are expressed in UNIX time, the same units as block.timestamp.
     uint256 private _start;
+    uint256 private _cliff;
     uint256 private _finish;
     uint256 private _duration;
     uint256 private _releasesCount;
@@ -37,11 +38,11 @@ contract TokenVesting {
 
     /**
      * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
-     * beneficiary, gradually in a linear fashion until start + duration * releasesCount. By then all
-     * of the balance will have vested.
+     * beneficiary, gradually in a linear fashion until block.timestamp + cliff + duration * releasesCount.
+     * By then all of the balance will have vested.
      * @param __token address of the token which should be vested
      * @param __beneficiary address of the beneficiary to whom vested tokens are transferred
-     * @param __start the time (as Unix time) at which point vesting starts
+     * @param __cliff the duration in seconds from the current time at which point vesting starts
      * @param __duration duration in seconds of each release
      * @param __releasesCount total amount of upcoming releases
      * @param __revocable whether the vesting is revocable or not
@@ -49,33 +50,31 @@ contract TokenVesting {
     constructor(
         address __token,
         address __beneficiary,
-        uint256 __start,
+        uint256 __cliff,
         uint256 __duration,
         uint256 __releasesCount,
         bool __revocable
     ) {
         require(
-            __beneficiary != address(0),
-            "TokenVesting: beneficiary is the zero address!"
-        );
-        require(
             __token != address(0),
             "TokenVesting: token is the zero address!"
         );
+        require(
+            __beneficiary != address(0),
+            "TokenVesting: beneficiary is the zero address!"
+        );
+        require(__cliff > 0, "TokenVesting: cliff is 0!");
         require(__duration > 0, "TokenVesting: duration is 0!");
         require(__releasesCount > 0, "TokenVesting: releases count is 0!");
-        require(
-            __start.add(__duration) > block.timestamp,
-            "TokenVesting: final time is before current time!"
-        );
 
         _token = IERC20(__token);
         _beneficiary = __beneficiary;
         _revocable = __revocable;
         _duration = __duration;
         _releasesCount = __releasesCount;
-        _start = __start;
-        _finish = __start.add(_releasesCount.mul(_duration));
+        _cliff = __cliff;
+        _start = block.timestamp.add(__cliff);
+        _finish = _start.add(_releasesCount.mul(_duration));
 
         _owner = msg.sender;
     }
@@ -96,6 +95,13 @@ contract TokenVesting {
      */
     function start() public view returns (uint256) {
         return _start;
+    }
+
+    /**
+     * @return the cliff of the token vesting.
+     */
+    function cliff() public view returns (uint256) {
+        return _cliff;
     }
 
     /**

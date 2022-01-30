@@ -13,14 +13,14 @@ describe("TokenVesting", function () {
     await this.token.deployed();
 
     let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
-    this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
+    this.cliff = time.duration.seconds(100); // Start after 100 seconds
     this.releasesCount = 4;
     this.duration = time.duration.weeks("10");
     this.revocable = true;
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
       beneficiary.address,
-      this.startTime.toString(),
+      this.cliff.toString(),
       this.duration.toString(),
       this.releasesCount.toString(),
       this.revocable
@@ -37,15 +37,17 @@ describe("TokenVesting", function () {
   it("test getters", async function () {
     let vestingBeneficiary = await this.tokenVesting.beneficiary();
     expect(vestingBeneficiary).to.equal(beneficiary.address);
-    let vestingStart = await this.tokenVesting.start();
-    expect(vestingStart.toString()).to.equal(this.startTime.toString());
 
+    let vestingStart = await this.tokenVesting.start();
     let vestingFinish = await this.tokenVesting.finish();
     expect(vestingFinish.toString()).to.equal(
-      this.startTime
+      new BN(vestingStart.toNumber())
         .add(this.duration.mul(new BN(this.releasesCount)))
         .toString()
     );
+
+    let vestingCliff = await this.tokenVesting.cliff();
+    expect(vestingCliff.toString()).to.equal(this.cliff.toString());
 
     let vestingDuration = await this.tokenVesting.duration();
     expect(vestingDuration.toString()).to.equal(this.duration.toString());
@@ -337,14 +339,14 @@ describe("TokenVesting - odd token divison", function () {
     await this.token.deployed();
 
     let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
-    this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
+    this.cliff = time.duration.seconds(100); // Start after 100 seconds
     this.releasesCount = 3;
     this.duration = time.duration.weeks("10");
     this.revocable = true;
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
       beneficiary.address,
-      this.startTime.toString(),
+      this.cliff.toString(),
       this.duration.toString(),
       this.releasesCount.toString(),
       this.revocable
