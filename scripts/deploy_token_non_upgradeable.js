@@ -5,7 +5,7 @@ async function main() {
   );
   console.log("Deploying ClimaCoinToken...");
   const climaCoinToken = await ClimaCoinToken.deploy(
-    "ClimaCoin Token",
+    "Climacoin",
     "CLC",
     29000000000
   );
