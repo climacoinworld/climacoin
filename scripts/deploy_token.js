@@ -1,13 +1,13 @@
 // scripts/deploy_token.js
 async function main() {
-  const ClimaCoinToken = await ethers.getContractFactory("ClimaCoinToken");
-  console.log("Deploying ClimaCoinToken...");
-  const climaCoinToken = await upgrades.deployProxy(
-    ClimaCoinToken,
-    ["Climacoin", "CLC", 29000000000],
-    { initializer: "initialize" }
+  const ClimacoinToken = await ethers.getContractFactory("ClimacoinToken");
+  console.log("Deploying Climacoin Token...");
+  const climaCoinToken = await ClimacoinToken.deploy(
+    "Climacoin",
+    "CLC",
+    29000000000
   );
-  console.log("ClimaCoinToken deployed to:", climaCoinToken.address);
+  console.log("Climacoin Token deployed to:", climaCoinToken.address);
 }
 
 main()

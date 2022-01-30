@@ -4,34 +4,28 @@ const { expect } = require("chai");
 const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 
 // Start test block
-describe("TokenVesting (proxy)", function () {
+describe("TokenVesting", function () {
   beforeEach(async function () {
     [owner, beneficiary, _] = await ethers.getSigners();
 
-    let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
-    this.token = await upgrades.deployProxy(
-      TokenFactory,
-      ["ClimaCoin Token", "CLC", 29000000000],
-      { initializer: "initialize" }
-    );
+    let TokenFactory = await ethers.getContractFactory("ClimacoinToken");
+    this.token = await TokenFactory.deploy("Climacoin", "CLC", 29000000000);
+    await this.token.deployed();
 
     let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
     this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
     this.releasesCount = 4;
     this.duration = time.duration.weeks("10");
     this.revocable = true;
-    this.tokenVesting = await upgrades.deployProxy(
-      TokenVestingFactory,
-      [
-        this.token.address,
-        beneficiary.address,
-        this.startTime.toString(),
-        this.duration.toString(),
-        this.releasesCount.toString(),
-        this.revocable,
-      ],
-      { initializer: "initialize" }
+    this.tokenVesting = await TokenVestingFactory.deploy(
+      this.token.address,
+      beneficiary.address,
+      this.startTime.toString(),
+      this.duration.toString(),
+      this.releasesCount.toString(),
+      this.revocable
     );
+    await this.tokenVesting.deployed();
 
     await this.token.transfer(
       this.tokenVesting.address,
@@ -334,34 +328,28 @@ describe("TokenVesting (proxy)", function () {
 });
 
 // Start test block
-describe("TokenVesting (proxy) - odd token divison", function () {
+describe("TokenVesting - odd token divison", function () {
   beforeEach(async function () {
     [owner, beneficiary, _] = await ethers.getSigners();
 
-    let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
-    this.token = await upgrades.deployProxy(
-      TokenFactory,
-      ["ClimaCoin Token", "CLC", 29000000000],
-      { initializer: "initialize" }
-    );
+    let TokenFactory = await ethers.getContractFactory("ClimacoinToken");
+    this.token = await TokenFactory.deploy("Climacoin", "CLC", 29000000000);
+    await this.token.deployed();
 
     let TokenVestingFactory = await ethers.getContractFactory("TokenVesting");
     this.startTime = (await time.latest()).add(time.duration.seconds(100)); // Start after 100 seconds
     this.releasesCount = 3;
     this.duration = time.duration.weeks("10");
     this.revocable = true;
-    this.tokenVesting = await upgrades.deployProxy(
-      TokenVestingFactory,
-      [
-        this.token.address,
-        beneficiary.address,
-        this.startTime.toString(),
-        this.duration.toString(),
-        this.releasesCount.toString(),
-        this.revocable,
-      ],
-      { initializer: "initialize" }
+    this.tokenVesting = await TokenVestingFactory.deploy(
+      this.token.address,
+      beneficiary.address,
+      this.startTime.toString(),
+      this.duration.toString(),
+      this.releasesCount.toString(),
+      this.revocable
     );
+    await this.tokenVesting.deployed();
 
     await this.token.transfer(
       this.tokenVesting.address,

@@ -11,10 +11,13 @@ const {
 async function main() {
   const TokenVesting = await ethers.getContractFactory("TokenVesting");
   console.log("Deploying TokenVesting...");
-  const tokenVesting = await upgrades.deployProxy(
-    TokenVesting,
-    [token, beneficiary, start, duration, releasesCount, revocable],
-    { initializer: "initialize" }
+  const tokenVesting = await TokenVesting.deploy(
+    token,
+    beneficiary,
+    start,
+    duration,
+    releasesCount,
+    revocable
   );
   console.log("TokenVesting deployed to:", tokenVesting.address);
 }

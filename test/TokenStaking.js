@@ -34,12 +34,9 @@ describe("TokenStaking (proxy)", function () {
   beforeEach(async function () {
     [owner, user1, user2, user3, _] = await ethers.getSigners();
 
-    let TokenFactory = await ethers.getContractFactory("ClimaCoinToken");
-    token = await upgrades.deployProxy(
-      TokenFactory,
-      ["ClimaCoin Token", "CLC", 29000000000],
-      { initializer: "initialize" }
-    );
+    let TokenFactory = await ethers.getContractFactory("ClimacoinToken");
+    token = await TokenFactory.deploy("Climacoin", "CLC", 29000000000);
+    await token.deployed();
 
     await token.transfer(user1.address, ethers.utils.parseEther("2000000"));
     await token.transfer(user2.address, ethers.utils.parseEther("2000000"));

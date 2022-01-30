@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract TokenStaking is Initializable, AccessControlUpgradeable {
@@ -28,7 +28,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
         uint256 _packageInterest;
     }
 
-    IERC20Upgradeable public tokenContract;
+    IERC20 public tokenContract;
 
     bytes32[] public packageNames;
     mapping(bytes32 => YieldType) public packages;
@@ -72,7 +72,7 @@ contract TokenStaking is Initializable, AccessControlUpgradeable {
     function initialize(address _stakedToken) public virtual initializer {
         __AccessControl_init();
 
-        tokenContract = IERC20Upgradeable(_stakedToken);
+        tokenContract = IERC20(_stakedToken);
         rewardProviderTokenAllowance = 0;
         totalStakedFunds = 0;
         paused = false;

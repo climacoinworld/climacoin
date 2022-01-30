@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * @title TokenVesting
  * @dev A token holder contract that can release its token balance gradually like a
  * typical vesting scheme.
  */
-contract TokenVesting is Initializable {
-    using SafeMathUpgradeable for uint256;
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+contract TokenVesting {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     event TokensReleased(uint256 amount);
     event TokenVestingRevoked(uint256 amount);
@@ -34,49 +33,49 @@ contract TokenVesting is Initializable {
     bool private _revocable;
     bool private _revoked;
 
-    IERC20Upgradeable private _token;
+    IERC20 private _token;
 
     /**
      * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
      * beneficiary, gradually in a linear fashion until start + duration * releasesCount. By then all
      * of the balance will have vested.
-     * @param token address of the token which should be vested
-     * @param beneficiary address of the beneficiary to whom vested tokens are transferred
-     * @param start the time (as Unix time) at which point vesting starts
-     * @param duration duration in seconds of each release
-     * @param releasesCount total amount of upcoming releases
-     * @param revocable whether the vesting is revocable or not
+     * @param __token address of the token which should be vested
+     * @param __beneficiary address of the beneficiary to whom vested tokens are transferred
+     * @param __start the time (as Unix time) at which point vesting starts
+     * @param __duration duration in seconds of each release
+     * @param __releasesCount total amount of upcoming releases
+     * @param __revocable whether the vesting is revocable or not
      */
-    function initialize(
-        address token,
-        address beneficiary,
-        uint256 start,
-        uint256 duration,
-        uint256 releasesCount,
-        bool revocable
-    ) public virtual initializer {
+    constructor(
+        address __token,
+        address __beneficiary,
+        uint256 __start,
+        uint256 __duration,
+        uint256 __releasesCount,
+        bool __revocable
+    ) {
         require(
-            beneficiary != address(0),
+            __beneficiary != address(0),
             "TokenVesting: beneficiary is the zero address!"
         );
         require(
-            token != address(0),
+            __token != address(0),
             "TokenVesting: token is the zero address!"
         );
-        require(duration > 0, "TokenVesting: duration is 0!");
-        require(releasesCount > 0, "TokenVesting: releases count is 0!");
+        require(__duration > 0, "TokenVesting: duration is 0!");
+        require(__releasesCount > 0, "TokenVesting: releases count is 0!");
         require(
-            start.add(duration) > block.timestamp,
+            __start.add(__duration) > block.timestamp,
             "TokenVesting: final time is before current time!"
         );
 
-        _token = IERC20Upgradeable(token);
-        _beneficiary = beneficiary;
-        _revocable = revocable;
-        _duration = duration;
-        _releasesCount = releasesCount;
-        _start = start;
-        _finish = start.add(_releasesCount.mul(_duration));
+        _token = IERC20(__token);
+        _beneficiary = __beneficiary;
+        _revocable = __revocable;
+        _duration = __duration;
+        _releasesCount = __releasesCount;
+        _start = __start;
+        _finish = __start.add(_releasesCount.mul(_duration));
 
         _owner = msg.sender;
     }
