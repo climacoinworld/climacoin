@@ -14,6 +14,7 @@ contract ClimacoinToken is ERC20, AccessControl {
         string memory symbol,
         uint256 initialSupply
     ) ERC20(name, symbol) {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(BURNER_ROLE, _msgSender());
         _mint(_msgSender(), initialSupply * 10**18);
