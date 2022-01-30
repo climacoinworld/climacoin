@@ -94,10 +94,6 @@ contract TokenVesting {
      * @return the start time of the token vesting.
      */
     function start(address __beneficiary) public view returns (uint256) {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._start;
     }
 
@@ -105,10 +101,6 @@ contract TokenVesting {
      * @return the finish time of the token vesting.
      */
     function finish(address __beneficiary) public view returns (uint256) {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._finish;
     }
 
@@ -116,10 +108,6 @@ contract TokenVesting {
      * @return the cliff of the token vesting.
      */
     function cliff(address __beneficiary) public view returns (uint256) {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._cliff;
     }
 
@@ -131,10 +119,6 @@ contract TokenVesting {
         view
         returns (uint256)
     {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._releasesCount;
     }
 
@@ -142,10 +126,6 @@ contract TokenVesting {
      * @return the duration of the token vesting.
      */
     function duration(address __beneficiary) public view returns (uint256) {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._duration;
     }
 
@@ -157,10 +137,6 @@ contract TokenVesting {
         view
         returns (uint256)
     {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._tokensAllocated;
     }
 
@@ -172,10 +148,6 @@ contract TokenVesting {
         view
         returns (uint256)
     {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         return _beneficiaryDetails[__beneficiary]._tokensReleased;
     }
 
@@ -191,10 +163,6 @@ contract TokenVesting {
         view
         returns (uint256)
     {
-        require(
-            msg.sender == _owner || msg.sender == __beneficiary,
-            "unauthorized sender!"
-        );
         require(
             _beneficiaryDetails[__beneficiary]._tokensAllocated > 0,
             "sender is not in the beneficiaries list!"
