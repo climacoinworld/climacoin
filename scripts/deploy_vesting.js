@@ -2,9 +2,10 @@
 const {
   token,
   beneficiary,
-  start,
-  duration,
+  cliff,
   releasesCount,
+  duration,
+  tokensAllocated,
 } = require("./token_vesting_params.json");
 
 async function main() {
@@ -13,9 +14,10 @@ async function main() {
   const tokenVesting = await TokenVesting.deploy(
     token,
     beneficiary,
-    start,
+    cliff,
+    releasesCount,
     duration,
-    releasesCount
+    tokensAllocated
   );
   console.log("TokenVesting deployed to:", tokenVesting.address);
 }
