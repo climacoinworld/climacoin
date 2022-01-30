@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./IERC20.sol";
+import "./SafeERC20.sol";
+import "./SafeMath.sol";
 
 /**
  * @title TokenVesting
@@ -93,50 +93,90 @@ contract TokenVesting {
     /**
      * @return the start time of the token vesting.
      */
-    function start() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._start;
+    function start(address __beneficiary) public view returns (uint256) {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._start;
     }
 
     /**
      * @return the finish time of the token vesting.
      */
-    function finish() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._finish;
+    function finish(address __beneficiary) public view returns (uint256) {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._finish;
     }
 
     /**
      * @return the cliff of the token vesting.
      */
-    function cliff() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._cliff;
+    function cliff(address __beneficiary) public view returns (uint256) {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._cliff;
     }
 
     /**
      * @return the number of token releases.
      */
-    function releasesCount() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._releasesCount;
+    function releasesCount(address __beneficiary)
+        public
+        view
+        returns (uint256)
+    {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._releasesCount;
     }
 
     /**
      * @return the duration of the token vesting.
      */
-    function duration() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._duration;
+    function duration(address __beneficiary) public view returns (uint256) {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._duration;
     }
 
     /**
      * @return the number of tokens allocated.
      */
-    function tokensAllocated() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._tokensAllocated;
+    function tokensAllocated(address __beneficiary)
+        public
+        view
+        returns (uint256)
+    {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._tokensAllocated;
     }
 
     /**
      * @return the amount of the tokens released.
      */
-    function tokensReleased() public view returns (uint256) {
-        return _beneficiaryDetails[msg.sender]._tokensReleased;
+    function tokensReleased(address __beneficiary)
+        public
+        view
+        returns (uint256)
+    {
+        require(
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
+        );
+        return _beneficiaryDetails[__beneficiary]._tokensReleased;
     }
 
     /**
@@ -146,12 +186,20 @@ contract TokenVesting {
         return _owner;
     }
 
-    function getAvailableTokens() public view returns (uint256) {
+    function getAvailableTokens(address __beneficiary)
+        public
+        view
+        returns (uint256)
+    {
         require(
-            _beneficiaryDetails[msg.sender]._tokensAllocated > 0,
-            "sender is not a beneficiary!"
+            msg.sender == _owner || msg.sender == __beneficiary,
+            "unauthorized sender!"
         );
-        return _releasableAmount(msg.sender);
+        require(
+            _beneficiaryDetails[__beneficiary]._tokensAllocated > 0,
+            "sender is not in the beneficiaries list!"
+        );
+        return _releasableAmount(__beneficiary);
     }
 
     // -----------------------------------------------------------------------

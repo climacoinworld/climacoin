@@ -37,30 +37,36 @@ describe("TokenVesting", function () {
     let vestingBeneficiary = await this.tokenVesting.beneficiaries();
     expect(vestingBeneficiary[0]).to.equal(beneficiary.address);
 
-    let vestingStart = await this.tokenVesting.connect(beneficiary).start();
-    let vestingFinish = await this.tokenVesting.connect(beneficiary).finish();
+    let vestingStart = await this.tokenVesting
+      .connect(beneficiary)
+      .start(beneficiary.address);
+    let vestingFinish = await this.tokenVesting
+      .connect(beneficiary)
+      .finish(beneficiary.address);
     expect(vestingFinish.toString()).to.equal(
       new BN(vestingStart.toNumber())
         .add(this.duration.mul(new BN(this.releasesCount)))
         .toString()
     );
 
-    let vestingCliff = await this.tokenVesting.connect(beneficiary).cliff();
+    let vestingCliff = await this.tokenVesting
+      .connect(beneficiary)
+      .cliff(beneficiary.address);
     expect(vestingCliff.toString()).to.equal(this.cliff.toString());
 
     let vestingDuration = await this.tokenVesting
       .connect(beneficiary)
-      .duration();
+      .duration(beneficiary.address);
     expect(vestingDuration.toString()).to.equal(this.duration.toString());
 
     let vestingReleased = await this.tokenVesting
       .connect(beneficiary)
-      .tokensReleased();
+      .tokensReleased(beneficiary.address);
     expect(vestingReleased.toString()).to.equal("0");
 
     let vestingReleasesCount = await this.tokenVesting
       .connect(beneficiary)
-      .releasesCount();
+      .releasesCount(beneficiary.address);
     expect(vestingReleasesCount.toString()).to.equal(
       this.releasesCount.toString()
     );
@@ -70,7 +76,7 @@ describe("TokenVesting", function () {
 
     let vestingAvailableTokens = await this.tokenVesting
       .connect(beneficiary)
-      .getAvailableTokens();
+      .getAvailableTokens(beneficiary.address);
     expect(vestingAvailableTokens.toString()).to.equal("0");
   });
 
@@ -78,14 +84,14 @@ describe("TokenVesting", function () {
   it("test release", async function () {
     let vestingReleased = await this.tokenVesting
       .connect(beneficiary)
-      .tokensReleased();
+      .tokensReleased(beneficiary.address);
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("0").toString()
     );
 
     let availableTokens = await this.tokenVesting
       .connect(beneficiary)
-      .getAvailableTokens();
+      .getAvailableTokens(beneficiary.address);
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("0").toString()
     );
@@ -115,7 +121,7 @@ describe("TokenVesting", function () {
 
     availableTokens = await this.tokenVesting
       .connect(beneficiary)
-      .getAvailableTokens();
+      .getAvailableTokens(beneficiary.address);
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("25").toString()
     );
@@ -124,7 +130,7 @@ describe("TokenVesting", function () {
 
     vestingReleased = await this.tokenVesting
       .connect(beneficiary)
-      .tokensReleased();
+      .tokensReleased(beneficiary.address);
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("25").toString()
     );
@@ -143,7 +149,7 @@ describe("TokenVesting", function () {
 
     availableTokens = await this.tokenVesting
       .connect(beneficiary)
-      .getAvailableTokens();
+      .getAvailableTokens(beneficiary.address);
     expect(availableTokens.toString()).to.equal(
       ethers.utils.parseEther("75").toString()
     );
@@ -152,7 +158,7 @@ describe("TokenVesting", function () {
 
     vestingReleased = await this.tokenVesting
       .connect(beneficiary)
-      .tokensReleased();
+      .tokensReleased(beneficiary.address);
     expect(vestingReleased.toString()).to.equal(
       ethers.utils.parseEther("100").toString()
     );
@@ -325,10 +331,10 @@ describe("TokenVesting - odd token divison", function () {
     await this.tokenVesting.connect(beneficiary).release();
 
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
-    expect(beneficiaryBalance.toString()).to.equal("73333333333333333332");
+    expect(beneficiaryBalance.toString()).to.equal("66666666666666666666");
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal("36666666666666666668");
+    expect(vestingBalance.toString()).to.equal("43333333333333333334");
 
     let ownerBalance = await this.token.balanceOf(owner.address);
     expect(ownerBalance.toString()).to.equal("28999999890000000000000000000");
