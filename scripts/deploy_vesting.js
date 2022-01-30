@@ -5,7 +5,6 @@ const {
   start,
   duration,
   releasesCount,
-  revocable,
 } = require("./token_vesting_params.json");
 
 async function main() {
@@ -16,8 +15,7 @@ async function main() {
     beneficiary,
     start,
     duration,
-    releasesCount,
-    revocable
+    releasesCount
   );
   console.log("TokenVesting deployed to:", tokenVesting.address);
 }

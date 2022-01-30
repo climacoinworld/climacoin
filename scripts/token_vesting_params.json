@@ -3,6 +3,5 @@
   "beneficiary": "0x779A565EEc2eBE9746Dff250A86b1D3172B4030F",
   "cliff": "300",
   "duration": "300",
-  "releasesCount": "4",
-  "revocable": false
+  "releasesCount": "4"
 }

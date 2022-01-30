@@ -16,7 +16,6 @@ contract TokenVesting {
     using SafeERC20 for IERC20;
 
     event TokensReleased(uint256 amount);
-    event TokenVestingRevoked(uint256 amount);
 
     // owner of this contract
     address private _owner;
@@ -31,9 +30,6 @@ contract TokenVesting {
     uint256 private _releasesCount;
     uint256 private _released;
 
-    bool private _revocable;
-    bool private _revoked;
-
     IERC20 private _token;
 
     /**
@@ -45,15 +41,13 @@ contract TokenVesting {
      * @param __cliff the duration in seconds from the current time at which point vesting starts
      * @param __duration duration in seconds of each release
      * @param __releasesCount total amount of upcoming releases
-     * @param __revocable whether the vesting is revocable or not
      */
     constructor(
         address __token,
         address __beneficiary,
         uint256 __cliff,
         uint256 __duration,
-        uint256 __releasesCount,
-        bool __revocable
+        uint256 __releasesCount
     ) {
         require(
             __token != address(0),
@@ -69,7 +63,6 @@ contract TokenVesting {
 
         _token = IERC20(__token);
         _beneficiary = __beneficiary;
-        _revocable = __revocable;
         _duration = __duration;
         _releasesCount = __releasesCount;
         _cliff = __cliff;
@@ -119,13 +112,6 @@ contract TokenVesting {
     }
 
     /**
-     * @return true if the vesting is revocable.
-     */
-    function revocable() public view returns (bool) {
-        return _revocable;
-    }
-
-    /**
      * @return the amount of the token released.
      */
     function released() public view returns (uint256) {
@@ -140,14 +126,7 @@ contract TokenVesting {
     }
 
     /**
-     * @return true if the token is revoked.
-     */
-    function revoked() public view returns (bool) {
-        return _revoked;
-    }
-
-    /**
-     * @return address, who allowed to revoke.
+     * @return owner of this vesting contract.
      */
     function owner() public view returns (address) {
         return _owner;
@@ -176,25 +155,6 @@ contract TokenVesting {
         emit TokensReleased(unreleased);
     }
 
-    /**
-     * @notice Allows the owner to revoke the vesting. Tokens already vested
-     * remain in the contract, the rest are returned to the owner.
-     */
-    function revoke() public {
-        require(msg.sender == _owner, "revoke: unauthorized sender!");
-        require(_revocable, "revoke: cannot revoke!");
-        require(!_revoked, "revoke: token already revoked!");
-
-        uint256 balance = _token.balanceOf(address(this));
-        uint256 unreleased = _releasableAmount();
-        uint256 refund = balance.sub(unreleased);
-
-        _revoked = true;
-        _token.safeTransfer(_owner, refund);
-
-        emit TokenVestingRevoked(refund);
-    }
-
     // -----------------------------------------------------------------------
     // INTERNAL
     // -----------------------------------------------------------------------
@@ -215,7 +175,7 @@ contract TokenVesting {
 
         if (block.timestamp < _start) {
             return 0;
-        } else if (block.timestamp >= _finish || _revoked) {
+        } else if (block.timestamp >= _finish) {
             return totalBalance;
         } else {
             uint256 timeLeftAfterStart = block.timestamp.sub(_start);

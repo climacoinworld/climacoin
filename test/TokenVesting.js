@@ -16,14 +16,12 @@ describe("TokenVesting", function () {
     this.cliff = time.duration.seconds(100); // Start after 100 seconds
     this.releasesCount = 4;
     this.duration = time.duration.weeks("10");
-    this.revocable = true;
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
       beneficiary.address,
       this.cliff.toString(),
       this.duration.toString(),
-      this.releasesCount.toString(),
-      this.revocable
+      this.releasesCount.toString()
     );
     await this.tokenVesting.deployed();
 
@@ -52,9 +50,6 @@ describe("TokenVesting", function () {
     let vestingDuration = await this.tokenVesting.duration();
     expect(vestingDuration.toString()).to.equal(this.duration.toString());
 
-    let vestingRevocable = await this.tokenVesting.revocable();
-    expect(vestingRevocable).to.equal(this.revocable);
-
     let vestingReleased = await this.tokenVesting.released();
     expect(vestingReleased.toString()).to.equal("0");
 
@@ -62,9 +57,6 @@ describe("TokenVesting", function () {
     expect(vestingReleasesCount.toString()).to.equal(
       this.releasesCount.toString()
     );
-
-    let vestingRevoked = await this.tokenVesting.revoked();
-    expect(vestingRevoked).to.equal(false);
 
     let vestingOwner = await this.tokenVesting.owner();
     expect(vestingOwner).to.equal(owner.address);
@@ -196,71 +188,6 @@ describe("TokenVesting", function () {
   });
 
   // Test case
-  it("test revoke", async function () {
-    await expectRevert(
-      this.tokenVesting.connect(beneficiary).revoke(),
-      "revoke: unauthorized sender!"
-    );
-
-    await time.increase(parseInt(time.duration.weeks("10")));
-    await time.increase(parseInt(time.duration.minutes("10")));
-
-    let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
-    expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("0").toString()
-    );
-
-    let vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("100").toString()
-    );
-
-    let ownerBalance = await this.token.balanceOf(owner.address);
-    expect(ownerBalance.toString()).to.equal(
-      ethers.utils.parseEther("28999999900").toString()
-    );
-
-    let availableTokens = await this.tokenVesting.getAvailableTokens();
-    expect(availableTokens.toString()).to.equal(
-      ethers.utils.parseEther("25").toString()
-    );
-
-    await this.tokenVesting.revoke();
-
-    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
-    expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("0").toString()
-    );
-
-    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("25").toString()
-    );
-
-    ownerBalance = await this.token.balanceOf(owner.address);
-    expect(ownerBalance.toString()).to.equal(
-      ethers.utils.parseEther("28999999975").toString()
-    );
-
-    await this.tokenVesting.connect(beneficiary).release();
-
-    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
-    expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("25").toString()
-    );
-
-    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("0").toString()
-    );
-
-    await expectRevert(
-      this.tokenVesting.revoke(),
-      "revoke: token already revoked!"
-    );
-  });
-
-  // Test case
   it("testing the entire workflow for token vesting", async function () {
     let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
@@ -277,10 +204,6 @@ describe("TokenVesting", function () {
       this.tokenVesting.connect(beneficiary).release(),
       "release: No tokens are due!"
     );
-    await expectRevert(
-      this.tokenVesting.connect(beneficiary).revoke(),
-      "revoke: unauthorized sender!"
-    );
 
     // Increase to first release
     await time.increase(parseInt(time.duration.weeks("11")));
@@ -296,22 +219,11 @@ describe("TokenVesting", function () {
       ethers.utils.parseEther("75").toString()
     );
 
-    // Increase to second release and revoke
+    // Increase to second release
     await time.increase(parseInt(time.duration.weeks("10")));
-    await this.tokenVesting.connect(owner).revoke();
 
     beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
     expect(beneficiaryBalance.toString()).to.equal(
-      ethers.utils.parseEther("25").toString()
-    );
-
-    let ownerBalance = await this.token.balanceOf(owner.address);
-    expect(ownerBalance.toString()).to.equal(
-      ethers.utils.parseEther("28999999950").toString()
-    );
-
-    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal(
       ethers.utils.parseEther("25").toString()
     );
 
@@ -324,7 +236,7 @@ describe("TokenVesting", function () {
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("0").toString()
+      ethers.utils.parseEther("50").toString()
     );
   });
 });
@@ -342,14 +254,12 @@ describe("TokenVesting - odd token divison", function () {
     this.cliff = time.duration.seconds(100); // Start after 100 seconds
     this.releasesCount = 3;
     this.duration = time.duration.weeks("10");
-    this.revocable = true;
     this.tokenVesting = await TokenVestingFactory.deploy(
       this.token.address,
       beneficiary.address,
       this.cliff.toString(),
       this.duration.toString(),
-      this.releasesCount.toString(),
-      this.revocable
+      this.releasesCount.toString()
     );
     await this.tokenVesting.deployed();
 
@@ -400,19 +310,5 @@ describe("TokenVesting - odd token divison", function () {
 
     let ownerBalance = await this.token.balanceOf(owner.address);
     expect(ownerBalance.toString()).to.equal("28999999890000000000000000000");
-
-    await this.tokenVesting.connect(owner).revoke();
-
-    ownerBalance = await this.token.balanceOf(owner.address);
-    expect(ownerBalance.toString()).to.equal("28999999926666666666666666668");
-
-    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
-    expect(vestingBalance.toString()).to.equal("0");
-
-    await time.increase(parseInt(time.duration.weeks("10")));
-    await expectRevert(
-      this.tokenVesting.connect(beneficiary).release(),
-      "release: No tokens are due!"
-    );
   });
 });
