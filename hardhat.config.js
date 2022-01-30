@@ -14,7 +14,15 @@ require("@openzeppelin/hardhat-upgrades");
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: {
+    version: "0.8.0",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
   networks: {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyApiKeyGoerli}`,
@@ -26,6 +34,14 @@ module.exports = {
     },
     bsctestnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
+      accounts: { mnemonic: mnemonic },
+    },
+    mumbai: {
+      url: `https://rpc-mumbai.maticvigil.com`,
+      accounts: { mnemonic: mnemonic },
+    },
+    matic: {
+      url: `https://polygon-rpc.com`,
       accounts: { mnemonic: mnemonic },
     },
   },
