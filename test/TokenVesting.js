@@ -78,6 +78,16 @@ describe("TokenVesting", function () {
       .connect(beneficiary)
       .getAvailableTokens(beneficiary.address);
     expect(vestingAvailableTokens.toString()).to.equal("0");
+
+    let contractBalance = await this.tokenVesting.contractBalance();
+    expect(contractBalance.toString()).to.equal(
+      ethers.utils.parseEther("100").toString()
+    );
+
+    let totalTokensAllocated = await this.tokenVesting.totalTokensAllocated();
+    expect(totalTokensAllocated.toString()).to.equal(
+      ethers.utils.parseEther("100").toString()
+    );
   });
 
   // Test case
@@ -246,6 +256,19 @@ describe("TokenVesting", function () {
       ethers.utils.parseEther("75").toString()
     );
 
+    await this.tokenVesting.addBeneficiary(
+      owner.address,
+      500,
+      4,
+      500,
+      ethers.utils.parseEther("1000").toString()
+    );
+
+    await this.token.transfer(
+      this.tokenVesting.address,
+      ethers.utils.parseEther("1000")
+    );
+
     // Increase to second release
     await time.increase(parseInt(time.duration.weeks("10")));
 
@@ -263,7 +286,17 @@ describe("TokenVesting", function () {
 
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal(
-      ethers.utils.parseEther("50").toString()
+      ethers.utils.parseEther("1050").toString()
+    );
+
+    let contractBalance = await this.tokenVesting.contractBalance();
+    expect(contractBalance.toString()).to.equal(
+      ethers.utils.parseEther("1050").toString()
+    );
+
+    let totalTokensAllocated = await this.tokenVesting.totalTokensAllocated();
+    expect(totalTokensAllocated.toString()).to.equal(
+      ethers.utils.parseEther("1100").toString()
     );
   });
 });

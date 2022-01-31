@@ -152,6 +152,27 @@ contract TokenVesting {
     }
 
     /**
+     * @return current balance of this vesting contract.
+     */
+    function contractBalance() public view returns (uint256) {
+        return _token.balanceOf(address(this));
+    }
+
+    /**
+     * @return the total tokens allocated for all the beneficiaries.
+     */
+    function totalTokensAllocated() public view returns (uint256) {
+        uint256 totalTockens = 0;
+        for (uint256 i = 0; i < _beneficiaryNames.length; i++) {
+            address addr = _beneficiaryNames[i];
+            totalTockens = totalTockens.add(
+                _beneficiaryDetails[addr]._tokensAllocated
+            );
+        }
+        return totalTockens;
+    }
+
+    /**
      * @return owner of this vesting contract.
      */
     function owner() public view returns (address) {
