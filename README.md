@@ -28,7 +28,7 @@ The project uses [Hardhat](https://hardhat.org/). For additional information, pl
 To deploy the token contract, run:  
 `npx hardhat run scripts/deploy_token.js --network [NETWORK]`
 
-For Polygon Testnet:
+For Polygon Testnet:  
 `npx hardhat run scripts/deploy_token.js --network mumbai`
 
 ### TokenVesting.sol
@@ -38,13 +38,13 @@ Before running the deployment script for vesting, you need to set up some enviro
 - `beneficiary`: List with the addresses of the beneficiaries.
 - `cliff`: List with the cliff for each beneficiary. Cliff is the lock period from the vesting scheme, measured in seconds. Example: a cliff period of 6 months translates to 14515200 (60 * 60 * 24 * 7 * 4 * 6).
 - `releasesCount`: List with the number of upcoming releases for each beneficiary, once the cliff has been touched.
-- `duration`: List with the duration in seconds of each release, for each beneficiary (_e.g. 4233600 for 7 weeks_).
+- `duration`: List with the duration of each release for each beneficiary, measured in seconds (_e.g. 4233600 for 7 weeks_).
 - `tokensAllocated`: List with the tokens allocated for each beneficiary.
 
 To deploy the vesting contract, run:  
 `npx hardhat run scripts/deploy_vesting.js --network [NETWORK]`
 
-For Polygon Testnet:
+For Polygon Testnet:  
 `npx hardhat run scripts/deploy_vesting.js --network mumbai`
 
 *All the available networks can be found in `hardhat.config.js`.*
@@ -85,4 +85,4 @@ After deploying it, the **vesting contract** should receive tokens for future ve
 
 [Write methods](https://mumbai.polygonscan.com/address/0xfB55B2b357b5b19E953Fbf4bA90767ADB5c1ed1F#writeContract):
 1) `addBeneficiary(beneficiary, cliff, releasesCount, duration, tokensAllocated)`: Add a new beneficiary to the vesting contract with the specified vesting conditions. Can be called only by the owner of the vesting contract.
-2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only be the beneficiary.
+2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only by the beneficiary.
