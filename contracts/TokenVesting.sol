@@ -64,18 +64,20 @@ contract TokenVesting {
         _owner = msg.sender;
 
         for (uint256 i = 0; i < __beneficiary.length; i++) {
-            VestingDetails memory details;
-            details._start = block.timestamp.add(__cliff[i]);
-            details._finish = details._start.add(
-                __releasesCount[i].mul(__duration[i])
-            );
-            details._cliff = __cliff[i];
-            details._releasesCount = __releasesCount[i];
-            details._duration = __duration[i];
-            details._tokensAllocated = __tokensAllocated[i];
-            details._tokensReleased = 0;
-            _beneficiaryDetails[__beneficiary[i]] = details;
-            _beneficiaryNames.push(__beneficiary[i]);
+            if (_beneficiaryDetails[__beneficiary[i]]._tokensAllocated == 0) {
+                VestingDetails memory details;
+                details._start = block.timestamp.add(__cliff[i]);
+                details._finish = details._start.add(
+                    __releasesCount[i].mul(__duration[i])
+                );
+                details._cliff = __cliff[i];
+                details._releasesCount = __releasesCount[i];
+                details._duration = __duration[i];
+                details._tokensAllocated = __tokensAllocated[i];
+                details._tokensReleased = 0;
+                _beneficiaryDetails[__beneficiary[i]] = details;
+                _beneficiaryNames.push(__beneficiary[i]);
+            }
         }
     }
 
