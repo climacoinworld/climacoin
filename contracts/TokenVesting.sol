@@ -226,6 +226,27 @@ contract TokenVesting {
     }
 
     /**
+     * @notice Transfers vested tokens to all the beneficiaries.
+     */
+    function releaseForAll() public {
+        require(msg.sender == _owner, "only owner can call this method!");
+
+        for (uint256 i = 0; i < _beneficiaryNames.length; i++) {
+            address addr = _beneficiaryNames[i];
+
+            uint256 unreleased = _releasableAmount(addr);
+            if (unreleased > 0) {
+                _beneficiaryDetails[addr]._tokensReleased = _beneficiaryDetails[
+                    addr
+                ]._tokensReleased.add(unreleased);
+                _token.safeTransfer(addr, unreleased);
+
+                emit TokensReleased(unreleased, addr);
+            }
+        }
+    }
+
+    /**
      * @notice Transfers vested tokens to beneficiary.
      */
     function release() public {

@@ -6,7 +6,7 @@ const { BN, expectRevert, time } = require("@openzeppelin/test-helpers");
 // Start test block
 describe("TokenVesting", function () {
   beforeEach(async function () {
-    [owner, beneficiary, _] = await ethers.getSigners();
+    [owner, beneficiary, beneficiary2, _] = await ethers.getSigners();
 
     let TokenFactory = await ethers.getContractFactory("ClimacoinToken");
     this.token = await TokenFactory.deploy("Climacoin", "CLC", 29000000000);
@@ -221,6 +221,60 @@ describe("TokenVesting", function () {
     vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
     expect(vestingBalance.toString()).to.equal(
       ethers.utils.parseEther("125").toString()
+    );
+  });
+
+  // Test case
+  it("testing releaseForAll method", async function () {
+    await this.tokenVesting.addBeneficiary(
+      beneficiary2.address,
+      this.cliff.toString(),
+      this.releasesCount.toString(),
+      this.duration.toString(),
+      ethers.utils.parseEther("1000").toString()
+    );
+
+    await this.token.transfer(
+      this.tokenVesting.address,
+      ethers.utils.parseEther("1000")
+    );
+
+    let beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    let beneficiary2Balance = await this.token.balanceOf(beneficiary2.address);
+    expect(beneficiary2Balance.toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+
+    let vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("1100").toString()
+    );
+
+    // Increase to first release
+    await time.increase(parseInt(time.duration.weeks("11")));
+    await expectRevert(
+      this.tokenVesting.connect(beneficiary).releaseForAll(),
+      "only owner can call this method!"
+    );
+    await this.tokenVesting.releaseForAll();
+
+    beneficiaryBalance = await this.token.balanceOf(beneficiary.address);
+    expect(beneficiaryBalance.toString()).to.equal(
+      ethers.utils.parseEther("25").toString()
+    );
+
+    beneficiary2Balance = await this.token.balanceOf(beneficiary2.address);
+    expect(beneficiary2Balance.toString()).to.equal(
+      ethers.utils.parseEther("250").toString()
+    );
+
+    vestingBalance = await this.token.balanceOf(this.tokenVesting.address);
+    expect(vestingBalance.toString()).to.equal(
+      ethers.utils.parseEther("825").toString()
     );
   });
 
