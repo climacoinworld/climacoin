@@ -70,19 +70,20 @@ The Climacoin token which has an initial supply of 29 billions (29000000000). Th
 3) `grantRole(role, account)`: Grant the specific `role` to the specific `account`. Only the address with `DEFAULT_ADMIN_ROLE` can call this method.
 4) `revokeRole(role, account)`: Revoke the specific `role` from the specific `account`. Only the address with `DEFAULT_ADMIN_ROLE` can call this method.
 
-### TokenVesting.sol - deployed on Polygon Testnet [here](https://mumbai.polygonscan.com/address/0xfB55B2b357b5b19E953Fbf4bA90767ADB5c1ed1F)
+### TokenVesting.sol - deployed on Polygon Testnet [here](https://mumbai.polygonscan.com/address/0xAEc5Aa712997f80CB98072F8C957d20047bC57c8)
 
 After deploying it, the **vesting contract** should receive tokens for future vesting logic. The owner can simply transfer the required amount of tokens to the contract address. When the time will be reached, release tokens will be available for claiming. There will be multiple releases with the same delay between them.  
 
 ***Available methods that can be called:***  
 
-[Roles and read methods](https://mumbai.polygonscan.com/address/0xfB55B2b357b5b19E953Fbf4bA90767ADB5c1ed1F#readContract):
+[Roles and read methods](https://mumbai.polygonscan.com/address/0xAEc5Aa712997f80CB98072F8C957d20047bC57c8#readContract):
 1) `beneficiaries()`: A list with all the beneficiaries that are included in the vesting scheme.
 2) `contractBalance()`: The total tokens, currently locked inside the vesting contract, that are waiting to be claimed.
 3) `start(beneficiary)`: When the vesting starts for the specific `beneficiary`. It is represented as a unix timestamp.
 4) `finish(beneficiary)`: When the vesting ends for the specific `beneficiary`. It is represented as a unix timestamp.
 5) `getAvailableTokens(beneficiary)`: Get the number of tokens that can be claimed by the beneficiary now.
 
-[Write methods](https://mumbai.polygonscan.com/address/0xfB55B2b357b5b19E953Fbf4bA90767ADB5c1ed1F#writeContract):
+[Write methods](https://mumbai.polygonscan.com/address/0xAEc5Aa712997f80CB98072F8C957d20047bC57c8#writeContract):
 1) `addBeneficiary(beneficiary, cliff, releasesCount, duration, tokensAllocated)`: Add a new beneficiary to the vesting contract with the specified vesting conditions. Can be called only by the owner of the vesting contract.
 2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only by the beneficiary.
+3) `releaseForAll()`: Releases all vested tokens for all the beneficiaries. Can be called only by the owner.
