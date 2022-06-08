@@ -5,6 +5,7 @@
 Smart contracts included in this repo:
 - `ClimacoinToken.sol` - The Climacoin token which is an ERC-20 token that's going to be deployed on Polygon Network. The token has mint and burn functionalities and it's not capped.
 - `TokenVesting.sol` - A token vesting contract that can release its tokens gradually like a typical vesting scheme. It will be used for token distribution.
+- `TokenStaking.sol` - A token holder contract that allows users to stake an ERC20 token and receive rewards in the native token. Can be used for staking. This contract is **upgradeable**, so it can receive improvements in the future. Read more about it here: [Writing Upgradeable Contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable).
 
 ## Installation
 
@@ -47,6 +48,17 @@ To deploy the vesting contract, run:
 For Polygon Testnet:  
 `npx hardhat run scripts/deploy_vesting.js --network mumbai`
 
+### TokenStaking.sol
+
+Before running the deployment script for staking, you need to set up some environment variables. Replace the parameters inside `./scripts/token_staking_params.json` with your own parameters:  
+- `token`: Address of the native token. The users can stake any amount of this token to increase their total balance.
+
+To deploy the staking contract, run:  
+`npx hardhat run scripts/deploy_staking.js --network [NETWORK]`
+
+For Polygon Testnet:  
+`npx hardhat run scripts/deploy_staking.js --network mumbai`
+
 *All the available networks can be found in `hardhat.config.js`.*
 
 ## How it works
@@ -87,3 +99,46 @@ After deploying it, the **vesting contract** should receive tokens for future ve
 1) `addBeneficiary(beneficiary, cliff, releasesCount, duration, tokensAllocated)`: Add a new beneficiary to the vesting contract with the specified vesting conditions. Can be called only by the owner of the vesting contract.
 2) `release()`: Releases all vested tokens that were not claimed yet. Can be called only by the beneficiary.
 3) `releaseForAll()`: Releases all vested tokens for all the beneficiaries. Can be called only by the owner.
+
+### TokenStaking.sol
+
+After deploying it, the staking contract should receive tokens via `addStakedTokenReward(amount)` for future staking logic. The contract owner is the only one who can call this method to add native tokens to the reward pool.
+
+***Staking Packages:***  
+
+Staking packages are predefined inside the constructor. The staking packages have the following components:
+
+- **name**: represents the name of the package
+- **days**: the number of days that need to pass to get the reward
+- **daysBlocked**: the number of days after staking in which users cannot withdraw their tokens
+- **compound interest**: the reward measured in % (i.e. 5%)
+
+There are 3 staking packages, each with their own characteristics:
+- **silver**: in 30 days you receive 8% of the staked tokens. The tokens are blocked for 15 days.
+- **gold**: in 60 days you receive 18% of the staked tokens. The tokens are blocked for 30 days.
+- **platinum**: in 90 days you receive 30% of the staked tokens. The tokens are blocked for 45 days.
+
+***Staking Mechanism:***  
+
+When choosing to stake tokens and receive the reward in the native token, users accumulate rewards which compound. The unstake function will calculate the compounded interest and return the whole amount (stake + compounded reward) to the user.
+
+***Examples:***  
+
+Given the following package:
+- **name**: GOLD
+- **days**: 60
+- **daysBlocked**: 30
+- **compound interest**: 18
+
+If the user stakes $100 worth of TOKEN in the GOLD package, the user will receive 18% of the staked amount each 60 days. This staked amount compounds, such that after 120 days, the user receives $139.24 worth of TOKEN instead of just $136 worth of TOKEN. Note that the staked amount will be blocked for the first 30 days.
+
+***Available methods that can be called:***  
+
+1) `stakeTokens(amount, packageName)`: Stakes an amount of funds in a package. Can be called by anyone, usually called by the user.
+2) `unstakeTokens(stakeIndex)`: Unstakes and retrieves the initial funds + the reward. If the reward is insufficient, the funds are blocked and the users cannot withdraw them. Can be called only by the same user who did the stake.
+3) `forceWithdraw(stakeIndex)`: Same as `unstakeTokens`, but if the reward is insufficient, the users can still force withdraw their initial funds, without getting the reward.
+4) `addStakedTokenReward(amount)`: Adds native token reward to the contract. Can be called only be the owner of the staking contract.
+5) `removeStakedTokenReward(amount)`: Removes native token reward from the contract. Can be called only be the owner of the staking contract.
+6) `checkStakeReward(address, stakeIndex)`: Returns the amount of native token that was accumulated for a stake. Can be called by anyone.
+7) `pauseStaking()`: Pause the staking so users can no longer stake their funds. Can be called only be the owner of the staking contract.
+8) `unpauseStaking()`: Unpause the staking so users can stake their funds. Can be called only be the owner of the staking contract.
